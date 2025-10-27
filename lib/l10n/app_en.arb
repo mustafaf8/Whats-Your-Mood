@@ -1,0 +1,73 @@
+{
+  "@@locale": "en",
+  "appTitle": "What's Your Mood",
+  "continueBtn": "Continue",
+  "start": "Start",
+  "next": "Next",
+  "nextRound": "Next Round",
+  "finishGame": "Finish Game",
+  "playAgain": "Play Again",
+  "homePage": "Home Page",
+  "@appTitle": {},
+  "@continueBtn": {},
+  "@start": {},
+  "@next": {},
+  "@nextRound": {},
+  "@finishGame": {},
+  "@playAgain": {},
+  "@homePage": {},
+  
+  "onboardingTitle1": "Let's Start the Fun!",
+  "onboardingDesc1": "Find the funniest and most creative answers with your friends.",
+  "onboardingTitle2": "Select Your Photo",
+  "onboardingDesc2": "In each round, you'll see a mood card and choose your most fitting photo.",
+  "onboardingTitle3": "Share Moments",
+  "onboardingDesc3": "Share funny and entertaining moments, let the fun never end!",
+  "@onboardingTitle1": {},
+  "@onboardingDesc1": {},
+  "@onboardingTitle2": {},
+  "@onboardingDesc2": {},
+  "@onboardingTitle3": {},
+  "@onboardingDesc3": {},
+  
+  "round": "Round",
+  "roundOf": "{total}",
+  "@roundOf": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  
+  "moodQ1": "When do I feel happy?",
+  "moodQ2": "Where do I feel most comfortable?",
+  "moodQ3": "With whom do I feel most natural?",
+  "moodQ4": "What music makes me happy?",
+  "moodQ5": "What's my favorite food?",
+  "moodQ6": "When do I feel most relaxed?",
+  "moodQ7": "When do I have the most fun?",
+  "moodQ8": "Where do I feel safest?",
+  "moodQ9": "What inspires me?",
+  "moodQ10": "My happiest memory?",
+  
+  "gameCompleted": "Game Completed!",
+  "gameCompletedDesc": "All rounds completed. Congratulations!",
+  "@gameCompleted": {},
+  "@gameCompletedDesc": {},
+  
+  "profile": "Profile",
+  "settings": "Settings",
+  "help": "Help",
+  "about": "About",
+  
+  "language": "Language",
+  "theme": "Theme",
+  "light": "Light",
+  "dark": "Dark",
+  "custom": "Custom",
+  "turkish": "Turkish",
+  "english": "English",
+  "spanish": "Spanish"
+}
+

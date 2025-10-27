@@ -39,21 +39,30 @@ class DrawerMenu extends StatelessWidget {
             leading: const Icon(Icons.person),
             title: const Text('Profil'),
             onTap: () {
-              context.go('/profile');
+              Navigator.of(context).pop(); // Drawer'ı kapat
+              // Profile route henüz eklenmedi
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Profil yakında gelecek')),
+              );
             },
           ),
           ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('Ayarlar'),
             onTap: () {
-              context.go('/settings');
+              Navigator.of(context).pop(); // Drawer'ı kapat
+              context.push('/settings');
             },
           ),
           ListTile(
             leading: const Icon(Icons.help),
             title: const Text('Yardım'),
             onTap: () {
-              context.go('/help');
+              Navigator.of(context).pop(); // Drawer'ı kapat
+              // Help route henüz eklenmedi
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Yardım yakında gelecek')),
+              );
             },
           ),
           const Divider(),
@@ -61,7 +70,11 @@ class DrawerMenu extends StatelessWidget {
             leading: const Icon(Icons.info),
             title: const Text('Hakkında'),
             onTap: () {
-              context.go('/about');
+              Navigator.of(context).pop(); // Drawer'ı kapat
+              // About route henüz eklenmedi
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Hakkında yakında gelecek')),
+              );
             },
           ),
         ],
