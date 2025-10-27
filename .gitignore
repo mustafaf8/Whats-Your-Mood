@@ -124,6 +124,7 @@ logs/
 .vscode/launch.json
 .vscode/extensions.json
 *.code-workspace
+.cursor/
 
 # OS generated files
 Thumbs.db
