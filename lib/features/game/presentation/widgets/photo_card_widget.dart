@@ -33,14 +33,14 @@ class PhotoCardWidget extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.accentOrange.withOpacity(0.3),
+                    color: AppColors.accentOrange.withValues(alpha: 0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 5,
                     offset: const Offset(0, 2),
                   ),
@@ -73,7 +73,7 @@ class PhotoCardWidget extends StatelessWidget {
               if (isSelected || (isRevealed && isSelected))
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.accentOrange.withOpacity(0.2),
+                    color: AppColors.accentOrange.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),

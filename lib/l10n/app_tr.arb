@@ -1,0 +1,50 @@
+{
+  "@@locale": "tr",
+  "appTitle": "What's Your Mood",
+  "continueBtn": "Devam",
+  "start": "Başla",
+  "next": "Sonraki",
+  "nextRound": "Sonraki Tur",
+  "finishGame": "Oyunu Bitir",
+  "playAgain": "Yeniden Oyna",
+  "homePage": "Ana Sayfa",
+  
+  "onboardingTitle1": "Eğlence Başlasın!",
+  "onboardingDesc1": "Arkadaşlarınla birlikte en komik ve yaratıcı cevapları bul.",
+  "onboardingTitle2": "Fotoğrafını Seç",
+  "onboardingDesc2": "Her turda bir mood kartı görürsün ve en uygun fotoğrafını seçersin.",
+  "onboardingTitle3": "Anıları Paylaş",
+  "onboardingDesc3": "Komik ve eğlenceli anları paylaş, eğlence hiç bitmesin!",
+  
+  "round": "Tur",
+  "roundOf": "{total}",
+  
+  "moodQ1": "Ne zaman mutlu hissediyorum?",
+  "moodQ2": "Nerede en rahat hissediyorum?",
+  "moodQ3": "Kimle birlikte kendimi doğal hissediyorum?",
+  "moodQ4": "Hangi müzik beni mutlu eder?",
+  "moodQ5": "En sevdiğim yemek nedir?",
+  "moodQ6": "En rahatladığım an?",
+  "moodQ7": "En eğlendiğim zaman?",
+  "moodQ8": "En güvende hissettiğim yer?",
+  "moodQ9": "Bana ilham veren şey?",
+  "moodQ10": "En mutlu olduğum anı?",
+  
+  "gameCompleted": "Oyun Tamamlandı!",
+  "gameCompletedDesc": "Tüm turlar bitti. Tebrikler!",
+  
+  "profile": "Profil",
+  "settings": "Ayarlar",
+  "help": "Yardım",
+  "about": "Hakkında",
+  
+  "language": "Dil",
+  "theme": "Tema",
+  "light": "Açık",
+  "dark": "Koyu",
+  "custom": "Özel",
+  "turkish": "Türkçe",
+  "english": "İngilizce",
+  "spanish": "İspanyolca"
+}
+

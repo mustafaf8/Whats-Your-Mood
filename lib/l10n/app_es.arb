@@ -1,0 +1,50 @@
+{
+  "@@locale": "es",
+  "appTitle": "What's Your Mood",
+  "continueBtn": "Continuar",
+  "start": "Comenzar",
+  "next": "Siguiente",
+  "nextRound": "Ronda Siguiente",
+  "finishGame": "Terminar Juego",
+  "playAgain": "Jugar de Nuevo",
+  "homePage": "Página de Inicio",
+  
+  "onboardingTitle1": "¡Que Comience la Diversión!",
+  "onboardingDesc1": "Encuentra las respuestas más divertidas y creativas con tus amigos.",
+  "onboardingTitle2": "Selecciona Tu Foto",
+  "onboardingDesc2": "En cada ronda verás una carta de estado de ánimo y elegirás tu foto más apropiada.",
+  "onboardingTitle3": "Comparte Momentos",
+  "onboardingDesc3": "¡Comparte momentos divertidos y entretenidos, que la diversión nunca termine!",
+  
+  "round": "Ronda",
+  "roundOf": "{total}",
+  
+  "moodQ1": "¿Cuándo me siento feliz?",
+  "moodQ2": "¿Dónde me siento más cómodo?",
+  "moodQ3": "¿Con quién me siento más natural?",
+  "moodQ4": "¿Qué música me hace feliz?",
+  "moodQ5": "¿Cuál es mi comida favorita?",
+  "moodQ6": "¿Cuándo me siento más relajado?",
+  "moodQ7": "¿Cuándo me divierto más?",
+  "moodQ8": "¿Dónde me siento más seguro?",
+  "moodQ9": "¿Qué me inspira?",
+  "moodQ10": "¿Mi recuerdo más feliz?",
+  
+  "gameCompleted": "¡Juego Completado!",
+  "gameCompletedDesc": "Todas las rondas completadas. ¡Felicitaciones!",
+  
+  "profile": "Perfil",
+  "settings": "Configuración",
+  "help": "Ayuda",
+  "about": "Acerca de",
+  
+  "language": "Idioma",
+  "theme": "Tema",
+  "light": "Claro",
+  "dark": "Oscuro",
+  "custom": "Personalizado",
+  "turkish": "Turco",
+  "english": "Inglés",
+  "spanish": "Español"
+}
+
