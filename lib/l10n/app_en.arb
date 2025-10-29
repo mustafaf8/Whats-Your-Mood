@@ -72,6 +72,13 @@
   
   "profileComingSoon": "Profile coming soon",
   "helpComingSoon": "Help coming soon",
-  "aboutComingSoon": "About coming soon"
+  "aboutComingSoon": "About coming soon",
+  
+  "statistics": "Statistics",
+  "gamesPlayed": "Games Played",
+  "roundsWon": "Rounds Won",
+  "favoriteMood": "Favorite Mood",
+  "errorLoadingProfile": "Error loading profile",
+  "retry": "Retry"
 }
 

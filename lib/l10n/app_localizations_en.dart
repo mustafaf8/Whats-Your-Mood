@@ -138,4 +138,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutComingSoon => 'About coming soon';
+
+  @override
+  String get statistics => 'Statistics';
+
+  @override
+  String get gamesPlayed => 'Games Played';
+
+  @override
+  String get roundsWon => 'Rounds Won';
+
+  @override
+  String get favoriteMood => 'Favorite Mood';
+
+  @override
+  String get errorLoadingProfile => 'Error loading profile';
+
+  @override
+  String get retry => 'Retry';
 }

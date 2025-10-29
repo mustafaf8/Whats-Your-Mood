@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/routes/app_router.dart';
 import 'core/theme/app_themes.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/locale/locale_provider.dart';
+import 'l10n/app_localizations.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -22,12 +22,8 @@ class MyApp extends ConsumerWidget {
       title: "What's Your Mood",
       theme: AppThemes.getTheme(themeState.currentTheme),
       locale: localeState.locale,
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [Locale('tr'), Locale('en'), Locale('es')],
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,
     );
   }

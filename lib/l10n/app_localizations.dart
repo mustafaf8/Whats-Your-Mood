@@ -354,6 +354,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'About coming soon'**
   String get aboutComingSoon;
+
+  /// No description provided for @statistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get statistics;
+
+  /// No description provided for @gamesPlayed.
+  ///
+  /// In en, this message translates to:
+  /// **'Games Played'**
+  String get gamesPlayed;
+
+  /// No description provided for @roundsWon.
+  ///
+  /// In en, this message translates to:
+  /// **'Rounds Won'**
+  String get roundsWon;
+
+  /// No description provided for @favoriteMood.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite Mood'**
+  String get favoriteMood;
+
+  /// No description provided for @errorLoadingProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading profile'**
+  String get errorLoadingProfile;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
