@@ -43,36 +43,131 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   // Mood Card
                   MoodCardWidget(text: gameState.currentMoodCard!.text),
                   const SizedBox(height: 32),
-                  // Photo Cards Grid
+                  // Fan (Yelpaze) layout for photo cards
                   Expanded(
-                    child: GridView.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 0.8,
-                          ),
-                      itemCount: gameState.currentPhotoCards.length,
-                      itemBuilder: (context, index) {
-                        final photoCard = gameState.currentPhotoCards[index];
-                        final isSelected = selectedPhotoId == photoCard.id;
+                    flex: 3,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final cards = gameState.currentPhotoCards;
+                        final total = cards.length;
                         final isRevealed = gameState.isRevealed;
 
-                        return PhotoCardWidget(
-                          photoCard: photoCard,
-                          onTap: () {
-                            if (!isRevealed) {
-                              setState(() {
-                                selectedPhotoId = photoCard.id;
-                              });
-                              ref
-                                  .read(gameProvider.notifier)
-                                  .selectPhoto(photoCard);
+                        // Visual tuning constants
+                        const double cardWidth = 140;
+                        const double cardHeight = 180;
+                        final double baseBottom = constraints.maxHeight * 0.06;
+                        final double selectedLift =
+                            constraints.maxHeight * 0.22; // lift increased
+                        final double horizontalSpread =
+                            constraints.maxWidth * 0.12;
+
+                        // Build non-selected first, selected last so it appears on top
+                        final indices = List<int>.generate(total, (i) => i);
+
+                        return Stack(
+                          alignment: Alignment.center,
+                          children: indices.map((index) {
+                            final photoCard = cards[index];
+                            final isSelected = selectedPhotoId == photoCard.id;
+
+                            // 4 farklı durum yönetimi
+                            // Durum 1: Yelpaze (!isRevealed && !isSelected)
+                            // Durum 2: Seçili/Kalkmış (!isRevealed && isSelected)
+                            // Durum 3: Oynandı/Ortada (isRevealed && isSelected)
+                            // Durum 4: Gizlendi (isRevealed && !isSelected)
+
+                            double left;
+                            double bottom;
+                            double angle;
+                            double opacity;
+
+                            if (isRevealed && isSelected) {
+                              // Durum 3: Ortada
+                              left = (constraints.maxWidth - cardWidth) / 2;
+                              bottom =
+                                  constraints.maxHeight / 2 - (cardHeight / 2);
+                              angle = 0;
+                              opacity = 1.0;
+                            } else if (isRevealed && !isSelected) {
+                              // Durum 4: Gizli (ekran dışı)
+                              left = (constraints.maxWidth - cardWidth) / 2;
+                              bottom = -cardHeight;
+                              angle = 0;
+                              opacity = 0;
+                            } else if (!isRevealed && isSelected) {
+                              // Durum 2: Kalkmış
+                              final double baseLeft =
+                                  constraints.maxWidth / 2 +
+                                  (index - (total / 2) + 0.5) *
+                                      horizontalSpread -
+                                  (cardWidth / 2);
+                              left = baseLeft;
+                              bottom = baseBottom + selectedLift;
+                              angle = 0; // Seçilince açıyı sıfırla
+                              opacity = 1.0;
+                            } else {
+                              // Durum 1: Yelpaze (varsayılan)
+                              final double baseLeft =
+                                  constraints.maxWidth / 2 +
+                                  (index - (total / 2) + 0.5) *
+                                      horizontalSpread -
+                                  (cardWidth / 2);
+                              left = baseLeft;
+                              bottom = baseBottom;
+                              angle = (index - (total / 2) + 0.5) * 0.15;
+                              opacity = 1.0;
                             }
-                          },
-                          isSelected: isSelected,
-                          isRevealed: isRevealed,
+
+                            return AnimatedPositioned(
+                              key: ValueKey(photoCard.id),
+                              duration: const Duration(milliseconds: 400),
+                              curve: Curves.easeInOut,
+                              left: left.clamp(
+                                0.0,
+                                constraints.maxWidth - cardWidth,
+                              ),
+                              bottom: bottom,
+                              width: cardWidth,
+                              height: cardHeight,
+                              child: AnimatedOpacity(
+                                opacity: opacity,
+                                duration: const Duration(milliseconds: 400),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 400),
+                                  curve: Curves.easeInOut,
+                                  transform: Matrix4.rotationZ(angle),
+                                  transformAlignment: Alignment.bottomCenter,
+                                  child: PhotoCardWidget(
+                                    photoCard: photoCard,
+                                    onTap: () {
+                                      if (isRevealed) return;
+                                      // Tur zaten bittiyse bir şey yapma
+
+                                      final String currentCardId = photoCard.id;
+                                      final bool isAlreadySelected =
+                                          selectedPhotoId == currentCardId;
+
+                                      if (isAlreadySelected) {
+                                        // İKİNCİ TIKLAMA: KARTI OYNA
+                                        // Bu kart zaten seçiliydi, şimdi oyna (Durum 3'ü tetikle)
+                                        ref
+                                            .read(gameProvider.notifier)
+                                            .selectPhoto(photoCard);
+                                      } else {
+                                        // İLK TIKLAMA: KARTI SEÇ/KALDIR
+                                        // Başka bir kart seçildi, sadece state'i güncelle (Durum 2'yi tetikle)
+                                        setState(() {
+                                          selectedPhotoId = currentCardId;
+                                        });
+                                      }
+                                    },
+                                    isSelected: isSelected,
+                                    isRevealed: isRevealed,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         );
                       },
                     ),

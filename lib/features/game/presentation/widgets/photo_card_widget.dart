@@ -18,6 +18,29 @@ class PhotoCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const emojis = [
+      '😄',
+      '😂',
+      '😍',
+      '🤩',
+      '😎',
+      '🤔',
+      '😜',
+      '😇',
+      '🤗',
+      '🥳',
+      '😴',
+      '😱',
+      '🤪',
+      '😅',
+      '🙃',
+      '🫠',
+      '🤓',
+      '😈',
+      '👻',
+      '🎭',
+    ];
+    final emoji = emojis[photoCard.id.hashCode.abs() % emojis.length];
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -56,17 +79,7 @@ class PhotoCardWidget extends StatelessWidget {
                 height: double.infinity,
                 color: Colors.grey[200],
                 child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('📸', style: TextStyle(fontSize: 40)),
-                      const SizedBox(height: 8),
-                      Text(
-                        photoCard.id,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                    ],
-                  ),
+                  child: Text(emoji, style: const TextStyle(fontSize: 48)),
                 ),
               ),
               // Selection overlay
