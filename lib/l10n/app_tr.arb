@@ -45,6 +45,10 @@
   "custom": "Özel",
   "turkish": "Türkçe",
   "english": "İngilizce",
-  "spanish": "İspanyolca"
+  "spanish": "İspanyolca",
+  
+  "profileComingSoon": "Profil yakında gelecek",
+  "helpComingSoon": "Yardım yakında gelecek",
+  "aboutComingSoon": "Hakkında yakında gelecek"
 }
 

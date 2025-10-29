@@ -6,6 +6,7 @@ import '../provider/game_provider.dart';
 import 'widgets/mood_card_widget.dart';
 import 'widgets/photo_card_widget.dart';
 import 'widgets/drawer_menu.dart';
+import 'package:whats_your_mood/l10n/app_localizations.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -20,11 +21,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   @override
   Widget build(BuildContext context) {
     final gameState = ref.watch(gameProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.lightGray,
       appBar: AppBar(
-        title: Text('Tur ${gameState.currentRound}/${gameState.totalRounds}'),
+        title: Text(
+          '${l10n.round} ${gameState.currentRound}/${gameState.totalRounds}',
+        ),
         backgroundColor: AppColors.gradientStart,
         foregroundColor: AppColors.white,
       ),
@@ -90,8 +94,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       },
                       child: Text(
                         gameState.currentRound < gameState.totalRounds
-                            ? 'Sonraki Tur'
-                            : 'Oyunu Bitir',
+                            ? l10n.nextRound
+                            : l10n.finishGame,
                       ),
                     ),
                 ],
@@ -101,25 +105,26 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   void _showGameFinishedDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('🎉 Oyun Tamamlandı!'),
-        content: const Text('Tüm turlar bitti. Tebrikler!'),
+        title: Text('🎉 ${l10n.gameCompleted}'),
+        content: Text(l10n.gameCompletedDesc),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               ref.read(gameProvider.notifier).resetGame();
             },
-            child: const Text('Yeniden Oyna'),
+            child: Text(l10n.playAgain),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               context.go('/');
             },
-            child: const Text('Ana Sayfa'),
+            child: Text(l10n.homePage),
           ),
         ],
       ),

@@ -68,6 +68,10 @@
   "custom": "Custom",
   "turkish": "Turkish",
   "english": "English",
-  "spanish": "Spanish"
+  "spanish": "Spanish",
+  
+  "profileComingSoon": "Profile coming soon",
+  "helpComingSoon": "Help coming soon",
+  "aboutComingSoon": "About coming soon"
 }
 
