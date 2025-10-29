@@ -138,4 +138,22 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get aboutComingSoon => 'Acerca de próximamente';
+
+  @override
+  String get statistics => 'Estadísticas';
+
+  @override
+  String get gamesPlayed => 'Juegos Jugados';
+
+  @override
+  String get roundsWon => 'Rondas Ganadas';
+
+  @override
+  String get favoriteMood => 'Estado de Ánimo Favorito';
+
+  @override
+  String get errorLoadingProfile => 'Error al cargar el perfil';
+
+  @override
+  String get retry => 'Reintentar';
 }

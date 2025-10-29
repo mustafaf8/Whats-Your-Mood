@@ -138,4 +138,22 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get aboutComingSoon => 'Hakkında yakında gelecek';
+
+  @override
+  String get statistics => 'İstatistikler';
+
+  @override
+  String get gamesPlayed => 'Oynanan Oyunlar';
+
+  @override
+  String get roundsWon => 'Kazanılan Turlar';
+
+  @override
+  String get favoriteMood => 'Favori Mood';
+
+  @override
+  String get errorLoadingProfile => 'Profil yüklenirken hata oluştu';
+
+  @override
+  String get retry => 'Tekrar Dene';
 }

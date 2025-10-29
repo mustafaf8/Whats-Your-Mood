@@ -42,10 +42,7 @@ class DrawerMenu extends StatelessWidget {
             title: Text(l10n.profile),
             onTap: () {
               Navigator.of(context).pop(); // Drawer'ı kapat
-              // Profile route henüz eklenmedi
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(l10n.profileComingSoon)));
+              context.push('/profile');
             },
           ),
           ListTile(

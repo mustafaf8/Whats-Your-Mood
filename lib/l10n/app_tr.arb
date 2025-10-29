@@ -49,6 +49,13 @@
   
   "profileComingSoon": "Profil yakında gelecek",
   "helpComingSoon": "Yardım yakında gelecek",
-  "aboutComingSoon": "Hakkında yakında gelecek"
+  "aboutComingSoon": "Hakkında yakında gelecek",
+  
+  "statistics": "İstatistikler",
+  "gamesPlayed": "Oynanan Oyunlar",
+  "roundsWon": "Kazanılan Turlar",
+  "favoriteMood": "Favori Mood",
+  "errorLoadingProfile": "Profil yüklenirken hata oluştu",
+  "retry": "Tekrar Dene"
 }
 

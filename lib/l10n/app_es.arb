@@ -49,6 +49,13 @@
   
   "profileComingSoon": "Perfil próximamente",
   "helpComingSoon": "Ayuda próximamente",
-  "aboutComingSoon": "Acerca de próximamente"
+  "aboutComingSoon": "Acerca de próximamente",
+  
+  "statistics": "Estadísticas",
+  "gamesPlayed": "Juegos Jugados",
+  "roundsWon": "Rondas Ganadas",
+  "favoriteMood": "Estado de Ánimo Favorito",
+  "errorLoadingProfile": "Error al cargar el perfil",
+  "retry": "Reintentar"
 }
 
