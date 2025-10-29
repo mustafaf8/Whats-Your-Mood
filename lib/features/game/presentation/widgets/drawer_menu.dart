@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:whats_your_mood/l10n/app_localizations.dart';
 
 class DrawerMenu extends StatelessWidget {
   const DrawerMenu({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          const DrawerHeader(
-            decoration: BoxDecoration(
+          DrawerHeader(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -23,32 +25,32 @@ class DrawerMenu extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
-                  "What's Your Mood",
-                  style: TextStyle(
+                  l10n.appTitle,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 8),
-                Text('🎭', style: TextStyle(fontSize: 40)),
+                const SizedBox(height: 8),
+                const Text('🎭', style: TextStyle(fontSize: 40)),
               ],
             ),
           ),
           ListTile(
             leading: const Icon(Icons.person),
-            title: const Text('Profil'),
+            title: Text(l10n.profile),
             onTap: () {
               Navigator.of(context).pop(); // Drawer'ı kapat
               // Profile route henüz eklenmedi
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profil yakında gelecek')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(l10n.profileComingSoon)));
             },
           ),
           ListTile(
             leading: const Icon(Icons.settings),
-            title: const Text('Ayarlar'),
+            title: Text(l10n.settings),
             onTap: () {
               Navigator.of(context).pop(); // Drawer'ı kapat
               context.push('/settings');
@@ -56,25 +58,25 @@ class DrawerMenu extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.help),
-            title: const Text('Yardım'),
+            title: Text(l10n.help),
             onTap: () {
               Navigator.of(context).pop(); // Drawer'ı kapat
               // Help route henüz eklenmedi
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Yardım yakında gelecek')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(l10n.helpComingSoon)));
             },
           ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.info),
-            title: const Text('Hakkında'),
+            title: Text(l10n.about),
             onTap: () {
               Navigator.of(context).pop(); // Drawer'ı kapat
               // About route henüz eklenmedi
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Hakkında yakında gelecek')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(l10n.aboutComingSoon)));
             },
           ),
         ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import 'package:whats_your_mood/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 class SplashScreen extends StatelessWidget {
@@ -11,6 +12,7 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(gradient: AppColors.mainGradient),
@@ -22,9 +24,9 @@ class SplashScreen extends StatelessWidget {
               children: [
                 const Spacer(),
                 // Logo
-                const Text(
-                  "What's Your Mood",
-                  style: TextStyle(
+                Text(
+                  l10n.appTitle,
+                  style: const TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
                     color: AppColors.white,
@@ -39,7 +41,7 @@ class SplashScreen extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => _onContinuePressed(context),
-                    child: const Text('Devam'),
+                    child: Text(l10n.continueBtn),
                   ),
                 ),
                 const SizedBox(height: 32),

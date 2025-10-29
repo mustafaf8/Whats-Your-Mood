@@ -45,6 +45,10 @@
   "custom": "Personalizado",
   "turkish": "Turco",
   "english": "Inglés",
-  "spanish": "Español"
+  "spanish": "Español",
+  
+  "profileComingSoon": "Perfil próximamente",
+  "helpComingSoon": "Ayuda próximamente",
+  "aboutComingSoon": "Acerca de próximamente"
 }
 

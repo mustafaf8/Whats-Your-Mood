@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import 'widgets/onboarding_page.dart';
+import 'package:whats_your_mood/l10n/app_localizations.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -14,25 +15,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
 
-  final List<OnboardingPageData> _pages = const [
-    OnboardingPageData(
-      emoji: '🎲',
-      title: 'Eğlence Başlasın!',
-      description:
-          'Arkadaşlarınla birlikte en komik ve yaratıcı cevapları bul.',
-    ),
-    OnboardingPageData(
-      emoji: '📸',
-      title: 'Fotoğrafını Seç',
-      description:
-          'Her turda bir mood kartı görürsün ve en uygun fotoğrafını seçersin.',
-    ),
-    OnboardingPageData(
-      emoji: '🎉',
-      title: 'Anıları Paylaş',
-      description: 'Komik ve eğlenceli anları paylaş, eğlence hiç bitmesin!',
-    ),
-  ];
+  late List<OnboardingPageData> _pages;
 
   @override
   void initState() {
@@ -69,6 +52,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    _pages = [
+      OnboardingPageData(
+        emoji: '🎲',
+        title: l10n.onboardingTitle1,
+        description: l10n.onboardingDesc1,
+      ),
+      OnboardingPageData(
+        emoji: '📸',
+        title: l10n.onboardingTitle2,
+        description: l10n.onboardingDesc2,
+      ),
+      OnboardingPageData(
+        emoji: '🎉',
+        title: l10n.onboardingTitle3,
+        description: l10n.onboardingDesc3,
+      ),
+    ];
     final isLastPage = _currentPage == _pages.length - 1;
 
     return Scaffold(
@@ -110,7 +111,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _onNextPressed,
-                    child: Text(isLastPage ? 'Başla' : 'Devam'),
+                    child: Text(isLastPage ? l10n.start : l10n.continueBtn),
                   ),
                 ),
               ),
