@@ -8,6 +8,7 @@ import 'widgets/photo_card_widget.dart';
 import 'widgets/drawer_menu.dart';
 import 'package:whats_your_mood/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../data/mock_card_data.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key, required this.gameId});
@@ -65,159 +66,162 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       text: gameState.currentMoodCard?.text ?? 'Mood',
                     ),
                     const SizedBox(height: 32),
-                    // Fan (Yelpaze) layout for photo cards
+                    // İçerik: Reveal değilse eldeki fan, reveal ise tüm oynananlar grid
                     Expanded(
                       flex: 3,
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final cards = gameState.currentPhotoCards;
-                          final total = cards.length;
-                          final isRevealed = gameState.isRevealed;
-
-                          // Visual tuning constants
-                          const double cardWidth = 140;
-                          const double cardHeight = 180;
-                          final double baseBottom =
-                              constraints.maxHeight * 0.06;
-                          final double selectedLift =
-                              constraints.maxHeight * 0.22; // lift increased
-                          final double horizontalSpread =
-                              constraints.maxWidth * 0.12;
-
-                          // Build non-selected first, selected last so it appears on top
-                          final indices = List<int>.generate(total, (i) => i);
-
-                          return Stack(
-                            alignment: Alignment.center,
-                            children: indices.map((index) {
-                              final photoCard = cards[index];
-                              final isSelected =
-                                  selectedPhotoId == photoCard.id;
-
-                              // 4 farklı durum yönetimi
-                              // Durum 1: Yelpaze (!isRevealed && !isSelected)
-                              // Durum 2: Seçili/Kalkmış (!isRevealed && isSelected)
-                              // Durum 3: Oynandı/Ortada (isRevealed && isSelected)
-                              // Durum 4: Gizlendi (isRevealed && !isSelected)
-
-                              double left;
-                              double bottom;
-                              double angle;
-                              double opacity;
-
-                              if (isRevealed && isSelected) {
-                                // Durum 3: Ortada
-                                left = (constraints.maxWidth - cardWidth) / 2;
-                                bottom =
-                                    constraints.maxHeight / 2 -
-                                    (cardHeight / 2);
-                                angle = 0;
-                                opacity = 1.0;
-                              } else if (isRevealed && !isSelected) {
-                                // Durum 4: Gizli (ekran dışı)
-                                left = (constraints.maxWidth - cardWidth) / 2;
-                                bottom = -cardHeight;
-                                angle = 0;
-                                opacity = 0;
-                              } else if (!isRevealed && isSelected) {
-                                // Durum 2: Kalkmış
-                                final double baseLeft =
-                                    constraints.maxWidth / 2 +
-                                    (index - (total / 2) + 0.5) *
-                                        horizontalSpread -
-                                    (cardWidth / 2);
-                                left = baseLeft;
-                                bottom = baseBottom + selectedLift;
-                                angle = 0; // Seçilince açıyı sıfırla
-                                opacity = 1.0;
-                              } else {
-                                // Durum 1: Yelpaze (varsayılan)
-                                final double baseLeft =
-                                    constraints.maxWidth / 2 +
-                                    (index - (total / 2) + 0.5) *
-                                        horizontalSpread -
-                                    (cardWidth / 2);
-                                left = baseLeft;
-                                bottom = baseBottom;
-                                angle = (index - (total / 2) + 0.5) * 0.15;
-                                opacity = 1.0;
-                              }
-
-                              return AnimatedPositioned(
-                                key: ValueKey(photoCard.id),
-                                duration: const Duration(milliseconds: 400),
-                                curve: Curves.easeInOut,
-                                left: left.clamp(
-                                  0.0,
-                                  constraints.maxWidth - cardWidth,
-                                ),
-                                bottom: bottom,
-                                width: cardWidth,
-                                height: cardHeight,
-                                child: AnimatedOpacity(
-                                  opacity: opacity,
-                                  duration: const Duration(milliseconds: 400),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 400),
-                                    curve: Curves.easeInOut,
-                                    transform: Matrix4.rotationZ(angle),
-                                    transformAlignment: Alignment.bottomCenter,
-                                    child: PhotoCardWidget(
-                                      photoCard: photoCard,
-                                      onTap: () {
-                                        if (isRevealed) return;
-                                        // Tur zaten bittiyse bir şey yapma
-
-                                        final String currentCardId =
-                                            photoCard.id;
-                                        final bool isAlreadySelected =
-                                            selectedPhotoId == currentCardId;
-
-                                        if (isAlreadySelected) {
-                                          _playCard(
-                                            currentCardId,
-                                            gameState.currentRound,
-                                          );
-                                        } else {
-                                          // İLK TIKLAMA: KARTI SEÇ/KALDIR
-                                          // Başka bir kart seçildi, sadece state'i güncelle (Durum 2'yi tetikle)
-                                          setState(() {
-                                            selectedPhotoId = currentCardId;
-                                          });
-                                        }
-                                      },
-                                      isSelected: isSelected,
-                                      isRevealed: isRevealed,
+                      child: gameState.isRevealed
+                          ? GridView.count(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                              children: gameState.playedCardIds.entries.map((
+                                e,
+                              ) {
+                                final username =
+                                    gameState.playersUsernames[e.key] ?? e.key;
+                                final photoId = e.value;
+                                final photo = findPhotoCardById(photoId);
+                                if (photo == null) {
+                                  return Card(
+                                    child: Center(child: Text(username)),
+                                  );
+                                }
+                                return Column(
+                                  children: [
+                                    Expanded(
+                                      child: PhotoCardWidget(
+                                        photoCard: photo,
+                                        onTap: () {},
+                                        isSelected: false,
+                                        isRevealed: true,
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          );
-                        },
-                      ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      username,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
+                            )
+                          : LayoutBuilder(
+                              builder: (context, constraints) {
+                                final cards = gameState.currentPhotoCards;
+                                final total = cards.length;
+                                const double cardWidth = 140;
+                                const double cardHeight = 180;
+                                final double baseBottom =
+                                    constraints.maxHeight * 0.06;
+                                final double selectedLift =
+                                    constraints.maxHeight * 0.22;
+                                final double horizontalSpread =
+                                    constraints.maxWidth * 0.12;
+                                final indices = List<int>.generate(
+                                  total,
+                                  (i) => i,
+                                );
+                                return Stack(
+                                  alignment: Alignment.center,
+                                  children: indices.map((index) {
+                                    final photoCard = cards[index];
+                                    final isSelected =
+                                        selectedPhotoId == photoCard.id;
+                                    final double baseLeft =
+                                        constraints.maxWidth / 2 +
+                                        (index - (total / 2) + 0.5) *
+                                            horizontalSpread -
+                                        (cardWidth / 2);
+                                    final double left = baseLeft;
+                                    final double bottom = isSelected
+                                        ? baseBottom + selectedLift
+                                        : baseBottom;
+                                    final double angle = isSelected
+                                        ? 0
+                                        : (index - (total / 2) + 0.5) * 0.15;
+                                    return AnimatedPositioned(
+                                      key: ValueKey(photoCard.id),
+                                      duration: const Duration(
+                                        milliseconds: 400,
+                                      ),
+                                      curve: Curves.easeInOut,
+                                      left: left.clamp(
+                                        0.0,
+                                        constraints.maxWidth - cardWidth,
+                                      ),
+                                      bottom: bottom,
+                                      width: cardWidth,
+                                      height: cardHeight,
+                                      child: AnimatedContainer(
+                                        duration: const Duration(
+                                          milliseconds: 400,
+                                        ),
+                                        curve: Curves.easeInOut,
+                                        transform: Matrix4.rotationZ(angle),
+                                        transformAlignment:
+                                            Alignment.bottomCenter,
+                                        child: PhotoCardWidget(
+                                          photoCard: photoCard,
+                                          onTap: () {
+                                            final String currentCardId =
+                                                photoCard.id;
+                                            final bool isAlreadySelected =
+                                                selectedPhotoId ==
+                                                currentCardId;
+                                            if (isAlreadySelected) {
+                                              _playCard(
+                                                currentCardId,
+                                                gameState.currentRound,
+                                              );
+                                            } else {
+                                              setState(() {
+                                                selectedPhotoId = currentCardId;
+                                              });
+                                            }
+                                          },
+                                          isSelected: isSelected,
+                                          isRevealed: false,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                );
+                              },
+                            ),
                     ),
                     const SizedBox(height: 16),
-                    // Next Round Button
-                    if (gameState.isRevealed)
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            selectedPhotoId = null;
-                          });
-                          if (gameState.currentRound >= gameState.totalRounds) {
-                            // Oyun bitti dialog
-                            _showGameFinishedDialog(context);
-                          } else {
-                            // Çok oyunculu akışta round ilerlemesi host tarafından yönetilecek
-                          }
-                        },
-                        child: Text(
-                          gameState.currentRound < gameState.totalRounds
-                              ? l10n.nextRound
-                              : l10n.finishGame,
-                        ),
-                      ),
+                    // Next Round Button (host ve reveal olduğunda)
+                    Builder(
+                      builder: (context) {
+                        final userId = FirebaseAuth.instance.currentUser?.uid;
+                        final isHost =
+                            userId != null && userId == gameState.hostId;
+                        if (!gameState.isRevealed || !isHost) {
+                          return const SizedBox.shrink();
+                        }
+                        return ElevatedButton(
+                          onPressed: () async {
+                            setState(() {
+                              selectedPhotoId = null;
+                            });
+                            if (gameState.currentRound >=
+                                gameState.totalRounds) {
+                              _showGameFinishedDialog(context);
+                              return;
+                            }
+                            await ref
+                                .read(gameRepositoryProvider)
+                                .hostNextRound(widget.gameId);
+                          },
+                          child: Text(
+                            gameState.currentRound < gameState.totalRounds
+                                ? l10n.nextRound
+                                : l10n.finishGame,
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),

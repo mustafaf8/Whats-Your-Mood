@@ -34,7 +34,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         username: _username.text,
       );
       if (!mounted) return;
-      context.go('/game/$id');
+      context.go('/lobby/$id');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -51,7 +51,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         username: _username.text,
       );
       if (!mounted) return;
-      context.go('/game/${_gameId.text.trim()}');
+      context.go('/lobby/${_gameId.text.trim()}');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
