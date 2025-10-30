@@ -3,6 +3,7 @@ import '../../features/onboarding/presentation/splash_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/game/presentation/game_screen.dart';
 import '../../features/lobby/presentation/lobby_screen.dart';
+import '../../features/lobby/presentation/lobby_waiting_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 
@@ -16,6 +17,13 @@ final router = GoRouter(
       builder: (context, state) => const OnboardingScreen(),
     ),
     GoRoute(path: '/lobby', builder: (context, state) => const LobbyScreen()),
+    GoRoute(
+      path: '/lobby/:gameId',
+      builder: (context, state) {
+        final gameId = state.pathParameters['gameId']!;
+        return LobbyWaitingScreen(gameId: gameId);
+      },
+    ),
     GoRoute(
       path: '/game/:gameId',
       builder: (context, state) {

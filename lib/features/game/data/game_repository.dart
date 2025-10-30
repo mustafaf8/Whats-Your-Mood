@@ -56,8 +56,29 @@ class GameRepository {
     required String userId,
     required String username,
   }) async {
-    final playerRef = _gamesRef().child('$gameId/players/$userId');
-    await playerRef.set({'username': username, 'score': 0, 'hand': {}});
+    final gameRef = _gamesRef().child(gameId);
+    await gameRef.runTransaction((mutable) {
+      if (mutable is! Map) {
+        return Transaction.success(mutable);
+      }
+      final map = Map<String, dynamic>.from(mutable as Map);
+      final deck = Map<String, dynamic>.from((map['deck'] as Map?) ?? {});
+      final photoList = List.from((deck['photoCards'] as List?) ?? []);
+      // 5 kart çek
+      final take = photoList.take(5).toList();
+      final remaining = photoList.skip(5).toList();
+      final hand = {for (final id in take) id.toString(): true};
+
+      // players
+      final players = Map<String, dynamic>.from((map['players'] as Map?) ?? {});
+      players[userId] = {'username': username, 'score': 0, 'hand': hand};
+
+      deck['photoCards'] = remaining;
+      map['players'] = players;
+      map['deck'] = deck;
+
+      return Transaction.success(map);
+    });
   }
 
   Stream<Map<String, dynamic>?> watchGame(String gameId) {
@@ -81,6 +102,64 @@ class GameRepository {
       '$gameId/rounds/$round/playedCards/$userId',
     );
     await cardRef.set({'cardId': cardId, 'votes': 0});
+  }
+
+  Future<void> setGameStatus(String gameId, String status) async {
+    await _gamesRef().child('$gameId/status').set(status);
+  }
+
+  Future<void> hostNextRound(String gameId) async {
+    final gameRef = _gamesRef().child(gameId);
+    await gameRef.runTransaction((mutable) {
+      if (mutable is! Map) return Transaction.success(mutable);
+      final map = Map<String, dynamic>.from(mutable as Map);
+
+      final int currentRound = ((map['currentRound'] as num?)?.toInt() ?? 1);
+      final int nextRound = currentRound + 1;
+
+      // Decks
+      final deck = Map<String, dynamic>.from((map['deck'] as Map?) ?? {});
+      final moodCards = List.from((deck['moodCards'] as List?) ?? []);
+      final photoCards = List.from((deck['photoCards'] as List?) ?? []);
+
+      // Yeni mood kartı çek
+      if (moodCards.isEmpty) return Transaction.success(map);
+      final nextMoodId = moodCards.removeAt(0).toString();
+
+      // Oyuncu listesi
+      final players = Map<String, dynamic>.from((map['players'] as Map?) ?? {});
+
+      // Her oyuncuya 1 foto kartı dağıt
+      for (final entry in players.entries) {
+        final pid = entry.key;
+        final pdata = Map<String, dynamic>.from((entry.value as Map?) ?? {});
+        final hand = Map<String, dynamic>.from((pdata['hand'] as Map?) ?? {});
+        if (photoCards.isNotEmpty) {
+          final drawId = photoCards.removeAt(0).toString();
+          hand[drawId] = true;
+        }
+        pdata['hand'] = hand;
+        players[pid] = pdata;
+      }
+
+      // Rounds güncelle
+      final rounds = Map<String, dynamic>.from((map['rounds'] as Map?) ?? {});
+      rounds['$nextRound'] = {
+        'moodCardId': nextMoodId,
+        'playedCards': {},
+        'state': 'playing',
+      };
+
+      // State yaz
+      map['currentRound'] = nextRound;
+      map['currentMoodCardId'] = nextMoodId;
+      deck['moodCards'] = moodCards;
+      deck['photoCards'] = photoCards;
+      map['deck'] = deck;
+      map['players'] = players;
+
+      return Transaction.success(map);
+    });
   }
 
   static Future<void> ensureAnonymousSignIn() async {

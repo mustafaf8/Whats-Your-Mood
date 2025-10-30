@@ -58,6 +58,18 @@ final gameStreamProvider = StreamProvider.family<GameState, String>((
 
     final isRevealed = players.isNotEmpty && played.length >= players.length;
 
+    final Map<String, String> playersUsernames = {
+      for (final entry in players.entries)
+        if (entry.value is Map && (entry.value as Map)['username'] != null)
+          entry.key: ((entry.value as Map)['username']).toString(),
+    };
+
+    final Map<String, String> playedCardIds = {
+      for (final entry in played.entries)
+        if (entry.value is Map && (entry.value as Map)['cardId'] != null)
+          entry.key: ((entry.value as Map)['cardId']).toString(),
+    };
+
     return GameState(
       allMoodCards: allMockMoodCards,
       allPhotoCards: allMockPhotoCards,
@@ -66,6 +78,10 @@ final gameStreamProvider = StreamProvider.family<GameState, String>((
       totalRounds: (json['totalRounds'] as num?)?.toInt() ?? 10,
       isRevealed: isRevealed,
       currentMoodCard: moodCard,
+      hostId: json['hostId'] as String?,
+      status: (json['status'] as String?) ?? 'waiting',
+      playersUsernames: playersUsernames,
+      playedCardIds: playedCardIds,
     );
   });
 });

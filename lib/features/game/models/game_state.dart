@@ -9,6 +9,10 @@ class GameState {
   final int currentRound;
   final int totalRounds;
   final bool isRevealed;
+  final String status; // waiting | playing | finished
+  final String? hostId;
+  final Map<String, String> playersUsernames; // userId -> username
+  final Map<String, String> playedCardIds; // userId -> photoCardId
 
   const GameState({
     required this.allMoodCards,
@@ -18,6 +22,10 @@ class GameState {
     this.currentRound = 0,
     this.totalRounds = 10,
     this.isRevealed = false,
+    this.status = 'waiting',
+    this.hostId,
+    this.playersUsernames = const {},
+    this.playedCardIds = const {},
   });
 
   GameState copyWith({
@@ -28,6 +36,10 @@ class GameState {
     int? currentRound,
     int? totalRounds,
     bool? isRevealed,
+    String? status,
+    String? hostId,
+    Map<String, String>? playersUsernames,
+    Map<String, String>? playedCardIds,
   }) {
     return GameState(
       allMoodCards: allMoodCards ?? this.allMoodCards,
@@ -39,6 +51,10 @@ class GameState {
       currentRound: currentRound ?? this.currentRound,
       totalRounds: totalRounds ?? this.totalRounds,
       isRevealed: isRevealed ?? this.isRevealed,
+      status: status ?? this.status,
+      hostId: hostId ?? this.hostId,
+      playersUsernames: playersUsernames ?? this.playersUsernames,
+      playedCardIds: playedCardIds ?? this.playedCardIds,
     );
   }
 }
