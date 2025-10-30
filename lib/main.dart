@@ -6,7 +6,15 @@ import 'core/theme/theme_provider.dart';
 import 'core/locale/locale_provider.dart';
 import 'l10n/app_localizations.dart';
 
-void main() {
+// Firebase
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const ProviderScope(child: MyApp()));
 }
 
