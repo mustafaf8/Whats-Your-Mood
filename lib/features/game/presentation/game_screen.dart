@@ -7,6 +7,7 @@ import 'widgets/mood_card_widget.dart';
 import 'widgets/photo_card_widget.dart';
 import 'widgets/drawer_menu.dart';
 import 'package:whats_your_mood/l10n/app_localizations.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key, required this.gameId});
@@ -19,6 +20,19 @@ class GameScreen extends ConsumerStatefulWidget {
 
 class _GameScreenState extends ConsumerState<GameScreen> {
   String? selectedPhotoId;
+
+  Future<void> _playCard(String cardId, int currentRound) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+    await ref
+        .read(gameRepositoryProvider)
+        .playCard(
+          gameId: widget.gameId,
+          round: currentRound,
+          userId: userId,
+          cardId: cardId,
+        );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +174,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                                             selectedPhotoId == currentCardId;
 
                                         if (isAlreadySelected) {
-                                          setState(() {});
+                                          _playCard(
+                                            currentCardId,
+                                            gameState.currentRound,
+                                          );
                                         } else {
                                           // İLK TIKLAMA: KARTI SEÇ/KALDIR
                                           // Başka bir kart seçildi, sadece state'i güncelle (Durum 2'yi tetikle)

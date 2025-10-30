@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../game/data/game_repository.dart';
 import '../models/game_state.dart';
+import '../data/mock_card_data.dart';
+import '../models/photo_card.dart';
 
 final gameRepositoryProvider = Provider<GameRepository>((ref) {
   return GameRepository(FirebaseDatabase.instance);
@@ -38,17 +41,31 @@ final gameStreamProvider = StreamProvider.family<GameState, String>((
     final rounds = _asMap(json['rounds']);
     final roundData = _asMap(rounds['$currentRound']);
     final played = _asMap(roundData['playedCards']);
+
+    final String? currentMoodCardId = json['currentMoodCardId'] as String?;
+    final moodCard = currentMoodCardId != null
+        ? findMoodCardById(currentMoodCardId)
+        : null;
+
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final userHandMap = userId != null
+        ? _asMap(_asMap(players[userId])['hand'])
+        : <String, dynamic>{};
+    final List<PhotoCard> photoCards = userHandMap.keys
+        .map((id) => findPhotoCardById(id))
+        .whereType<PhotoCard>()
+        .toList();
+
     final isRevealed = players.isNotEmpty && played.length >= players.length;
 
-    // Basit eşleme: eldeki kartlar yerine placeholder 4 kart
     return GameState(
-      allMoodCards: const [],
-      allPhotoCards: const [],
-      currentPhotoCards: const [],
+      allMoodCards: allMockMoodCards,
+      allPhotoCards: allMockPhotoCards,
+      currentPhotoCards: photoCards,
       currentRound: currentRound,
       totalRounds: (json['totalRounds'] as num?)?.toInt() ?? 10,
       isRevealed: isRevealed,
-      currentMoodCard: null,
+      currentMoodCard: moodCard,
     );
   });
 });
