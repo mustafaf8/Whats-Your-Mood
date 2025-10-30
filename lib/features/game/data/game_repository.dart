@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'mock_card_data.dart';
 
 class GameRepository {
   GameRepository(this._db);
@@ -16,22 +18,33 @@ class GameRepository {
     final newGameRef = _gamesRef().push();
     final gameId = newGameRef.key!;
 
+    // Deste oluşturmaları
+    final random = Random();
+    final moodDeck = List<String>.from(allMockMoodCards.map((m) => m.id))
+      ..shuffle(random);
+    final photoDeck = List<String>.from(allMockPhotoCards.map((p) => p.id))
+      ..shuffle(random);
+
+    // Host eline 5 foto kartı ver
+    final hostHandIds = photoDeck.take(5).toList();
+    final hostHand = {for (final id in hostHandIds) id: true};
+
+    // İlk tur mood kartı
+    final firstMoodId = moodDeck.first;
+
     final initial = {
       'hostId': hostUserId,
       'status': 'waiting',
       'totalRounds': 10,
       'currentRound': 1,
-      'currentMoodCardId': 'mood_id_1',
+      'currentMoodCardId': firstMoodId,
       'players': {
-        hostUserId: {'username': username, 'score': 0, 'hand': {}},
+        hostUserId: {'username': username, 'score': 0, 'hand': hostHand},
       },
       'rounds': {
-        '1': {'moodCardId': 'mood_id_1', 'playedCards': {}, 'state': 'playing'},
+        '1': {'moodCardId': firstMoodId, 'playedCards': {}, 'state': 'playing'},
       },
-      'deck': {
-        'moodCards': ['mood_id_1', 'mood_id_2', 'mood_id_3'],
-        'photoCards': ['photo_id_1', 'photo_id_2', 'photo_id_3', 'photo_id_4'],
-      },
+      'deck': {'moodCards': moodDeck, 'photoCards': photoDeck.skip(5).toList()},
     };
 
     await newGameRef.set(initial);
