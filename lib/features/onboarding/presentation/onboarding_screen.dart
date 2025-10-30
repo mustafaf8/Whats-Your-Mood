@@ -47,7 +47,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _onStartGame() {
-    context.go('/game');
+    context.go('/lobby');
   }
 
   @override

@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/onboarding/presentation/splash_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/game/presentation/game_screen.dart';
+import '../../features/lobby/presentation/lobby_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 
@@ -14,7 +15,14 @@ final router = GoRouter(
       path: '/onboarding',
       builder: (context, state) => const OnboardingScreen(),
     ),
-    GoRoute(path: '/game', builder: (context, state) => const GameScreen()),
+    GoRoute(path: '/lobby', builder: (context, state) => const LobbyScreen()),
+    GoRoute(
+      path: '/game/:gameId',
+      builder: (context, state) {
+        final gameId = state.pathParameters['gameId']!;
+        return GameScreen(gameId: gameId);
+      },
+    ),
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsScreen(),
