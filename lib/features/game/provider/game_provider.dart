@@ -5,6 +5,7 @@ import '../../game/data/game_repository.dart';
 import '../models/game_state.dart';
 import '../data/mock_card_data.dart';
 import '../models/photo_card.dart';
+import '../models/player_status.dart';
 
 final gameRepositoryProvider = Provider<GameRepository>((ref) {
   return GameRepository(FirebaseDatabase.instance);
@@ -72,6 +73,27 @@ final gameStreamProvider = StreamProvider.family<GameState, String>((
 
     final hasPlayed = userId != null && played.containsKey(userId);
 
+    // roundEndTime işle
+    final roundEndTimeMs = (roundData['roundEndTime'] as num?);
+    final roundEndTime = roundEndTimeMs != null
+        ? DateTime.fromMillisecondsSinceEpoch(roundEndTimeMs.toInt())
+        : null;
+
+    // PlayerStatus listesi oluştur
+    final playersList = <PlayerStatus>[];
+    for (final entry in playersUsernames.entries) {
+      final playerId = entry.key;
+      final playerUsername = entry.value;
+      final playerHasPlayed = played.containsKey(playerId);
+      final playerIsHost = playerId == json['hostId'];
+      playersList.add(PlayerStatus(
+        userId: playerId,
+        username: playerUsername,
+        hasPlayed: playerHasPlayed,
+        isHost: playerIsHost,
+      ));
+    }
+
     return GameState(
       allMoodCards: allMockMoodCards,
       allPhotoCards: allMockPhotoCards,
@@ -86,6 +108,8 @@ final gameStreamProvider = StreamProvider.family<GameState, String>((
       lobbyName: json['lobbyName'] as String?,
       playersUsernames: playersUsernames,
       playedCardIds: playedCardIds,
+      roundEndTime: roundEndTime,
+      players: playersList,
     );
   });
 });

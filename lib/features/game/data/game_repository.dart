@@ -48,7 +48,12 @@ class GameRepository {
         hostUserId: {'username': username, 'score': 0, 'hand': hostHand},
       },
       'rounds': {
-        '1': {'moodCardId': firstMoodId, 'playedCards': {}, 'state': 'playing'},
+        '1': {
+          'moodCardId': firstMoodId,
+          'playedCards': {},
+          'state': 'playing',
+          'roundEndTime': DateTime.now().millisecondsSinceEpoch + 45000,
+        },
       },
       'deck': {'moodCards': moodDeck, 'photoCards': photoDeck.skip(5).toList()},
     };
@@ -203,6 +208,7 @@ class GameRepository {
         'moodCardId': nextMoodId,
         'playedCards': {},
         'state': 'playing',
+        'roundEndTime': DateTime.now().millisecondsSinceEpoch + 45000,
       };
 
       // State yaz
