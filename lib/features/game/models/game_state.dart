@@ -9,8 +9,10 @@ class GameState {
   final int currentRound;
   final int totalRounds;
   final bool isRevealed;
+  final bool hasPlayed;
   final String status; // waiting | playing | finished
   final String? hostId;
+  final String? lobbyName;
   final Map<String, String> playersUsernames; // userId -> username
   final Map<String, String> playedCardIds; // userId -> photoCardId
 
@@ -22,8 +24,10 @@ class GameState {
     this.currentRound = 0,
     this.totalRounds = 10,
     this.isRevealed = false,
+    this.hasPlayed = false,
     this.status = 'waiting',
     this.hostId,
+    this.lobbyName,
     this.playersUsernames = const {},
     this.playedCardIds = const {},
   });
@@ -36,8 +40,10 @@ class GameState {
     int? currentRound,
     int? totalRounds,
     bool? isRevealed,
+    bool? hasPlayed,
     String? status,
     String? hostId,
+    String? lobbyName,
     Map<String, String>? playersUsernames,
     Map<String, String>? playedCardIds,
   }) {
@@ -51,8 +57,10 @@ class GameState {
       currentRound: currentRound ?? this.currentRound,
       totalRounds: totalRounds ?? this.totalRounds,
       isRevealed: isRevealed ?? this.isRevealed,
+      hasPlayed: hasPlayed ?? this.hasPlayed,
       status: status ?? this.status,
       hostId: hostId ?? this.hostId,
+      lobbyName: lobbyName ?? this.lobbyName,
       playersUsernames: playersUsernames ?? this.playersUsernames,
       playedCardIds: playedCardIds ?? this.playedCardIds,
     );

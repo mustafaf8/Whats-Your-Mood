@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'mock_card_data.dart';
+import '../../lobby/models/lobby_info.dart';
 
 class GameRepository {
   GameRepository(this._db);
@@ -10,10 +11,13 @@ class GameRepository {
   final FirebaseDatabase _db;
 
   DatabaseReference _gamesRef() => _db.ref('games');
+  DatabaseReference _activeLobbiesRef() => _db.ref('activeLobbies');
 
   Future<String> createGame({
     required String hostUserId,
     required String username,
+    required String lobbyName,
+    String? password,
   }) async {
     final newGameRef = _gamesRef().push();
     final gameId = newGameRef.key!;
@@ -38,6 +42,8 @@ class GameRepository {
       'totalRounds': 10,
       'currentRound': 1,
       'currentMoodCardId': firstMoodId,
+      'lobbyName': lobbyName,
+      if (password != null) 'password': password,
       'players': {
         hostUserId: {'username': username, 'score': 0, 'hand': hostHand},
       },
@@ -48,6 +54,16 @@ class GameRepository {
     };
 
     await newGameRef.set(initial);
+
+    // activeLobbies e ekle
+    await _activeLobbiesRef().child(gameId).set({
+      'lobbyName': lobbyName,
+      'hostUsername': username,
+      'playerCount': 1,
+      'maxPlayers': 6,
+      'hasPassword': password != null,
+    });
+
     return gameId;
   }
 
@@ -55,7 +71,18 @@ class GameRepository {
     required String gameId,
     required String userId,
     required String username,
+    String? password,
   }) async {
+    // Parola kontrolü
+    final passwordSnapshot = await _gamesRef()
+        .child(gameId)
+        .child('password')
+        .get();
+    final savedPassword = passwordSnapshot.value as String?;
+    if (savedPassword != null && savedPassword != password) {
+      throw Exception('Hatalı parola');
+    }
+
     final gameRef = _gamesRef().child(gameId);
     await gameRef.runTransaction((mutable) {
       if (mutable is! Map) {
@@ -79,6 +106,12 @@ class GameRepository {
 
       return Transaction.success(map);
     });
+
+    // activeLobbies e playerCount artır
+    await _activeLobbiesRef()
+        .child(gameId)
+        .child('playerCount')
+        .set(ServerValue.increment(1));
   }
 
   Stream<Map<String, dynamic>?> watchGame(String gameId) {
@@ -106,6 +139,28 @@ class GameRepository {
 
   Future<void> setGameStatus(String gameId, String status) async {
     await _gamesRef().child('$gameId/status').set(status);
+
+    // Oyun başladığında activeLobbies e den sil
+    if (status == 'playing') {
+      await _activeLobbiesRef().child(gameId).remove();
+    }
+  }
+
+  Stream<List<LobbyInfo>> watchActiveLobbies() {
+    return _activeLobbiesRef().onValue.map((event) {
+      final value = event.snapshot.value;
+      if (value is! Map) return <LobbyInfo>[];
+
+      final lobbies = <LobbyInfo>[];
+      for (final entry in value.entries) {
+        if (entry.key is String && entry.value is Map) {
+          final gameId = entry.key as String;
+          final data = Map<String, dynamic>.from(entry.value as Map);
+          lobbies.add(LobbyInfo.fromJson(gameId, data));
+        }
+      }
+      return lobbies;
+    });
   }
 
   Future<void> hostNextRound(String gameId) async {

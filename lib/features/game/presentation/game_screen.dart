@@ -65,7 +65,45 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     MoodCardWidget(
                       text: gameState.currentMoodCard?.text ?? 'Mood',
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 16),
+                    // Oyun durumu mesajı
+                    if (!gameState.isRevealed)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: gameState.hasPlayed
+                              ? Colors.green.shade100
+                              : Colors.blue.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          gameState.hasPlayed
+                              ? 'Kartınız oynandı! Diğer oyuncuları bekleyin...'
+                              : 'Bir kart seçin ve oynayın',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    if (gameState.isRevealed)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Tüm kartlar açıldı! Host oyunu sonlandırabilir.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    const SizedBox(height: 16),
                     // İçerik: Reveal değilse eldeki fan, reveal ise tüm oynananlar grid
                     Expanded(
                       flex: 3,
@@ -164,6 +202,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                                         child: PhotoCardWidget(
                                           photoCard: photoCard,
                                           onTap: () {
+                                            if (gameState.hasPlayed) return;
                                             final String currentCardId =
                                                 photoCard.id;
                                             final bool isAlreadySelected =
