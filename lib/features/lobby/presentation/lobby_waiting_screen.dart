@@ -25,7 +25,7 @@ class LobbyWaitingScreen extends ConsumerWidget {
         final isHost = userId != null && userId == state.hostId;
         final players = state.playersUsernames;
         return Scaffold(
-          appBar: AppBar(title: const Text('Bekleme Odası')),
+          appBar: AppBar(title: Text(state.lobbyName ?? 'Bekleme Odası')),
           body: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(

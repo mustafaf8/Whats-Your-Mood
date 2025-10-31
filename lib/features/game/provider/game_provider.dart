@@ -70,6 +70,8 @@ final gameStreamProvider = StreamProvider.family<GameState, String>((
           entry.key: ((entry.value as Map)['cardId']).toString(),
     };
 
+    final hasPlayed = userId != null && played.containsKey(userId);
+
     return GameState(
       allMoodCards: allMockMoodCards,
       allPhotoCards: allMockPhotoCards,
@@ -77,9 +79,11 @@ final gameStreamProvider = StreamProvider.family<GameState, String>((
       currentRound: currentRound,
       totalRounds: (json['totalRounds'] as num?)?.toInt() ?? 10,
       isRevealed: isRevealed,
+      hasPlayed: hasPlayed,
       currentMoodCard: moodCard,
       hostId: json['hostId'] as String?,
       status: (json['status'] as String?) ?? 'waiting',
+      lobbyName: json['lobbyName'] as String?,
       playersUsernames: playersUsernames,
       playedCardIds: playedCardIds,
     );
