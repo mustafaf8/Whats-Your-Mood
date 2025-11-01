@@ -1,5 +1,6 @@
 import 'mood_card.dart';
 import 'photo_card.dart';
+import 'player_status.dart';
 
 class GameState {
   final List<MoodCard> allMoodCards;
@@ -15,6 +16,8 @@ class GameState {
   final String? lobbyName;
   final Map<String, String> playersUsernames; // userId -> username
   final Map<String, String> playedCardIds; // userId -> photoCardId
+  final DateTime? roundEndTime;
+  final List<PlayerStatus> players;
 
   const GameState({
     required this.allMoodCards,
@@ -30,6 +33,8 @@ class GameState {
     this.lobbyName,
     this.playersUsernames = const {},
     this.playedCardIds = const {},
+    this.roundEndTime,
+    this.players = const [],
   });
 
   GameState copyWith({
@@ -46,6 +51,8 @@ class GameState {
     String? lobbyName,
     Map<String, String>? playersUsernames,
     Map<String, String>? playedCardIds,
+    DateTime? Function()? roundEndTime,
+    List<PlayerStatus>? players,
   }) {
     return GameState(
       allMoodCards: allMoodCards ?? this.allMoodCards,
@@ -63,6 +70,8 @@ class GameState {
       lobbyName: lobbyName ?? this.lobbyName,
       playersUsernames: playersUsernames ?? this.playersUsernames,
       playedCardIds: playedCardIds ?? this.playedCardIds,
+      roundEndTime: roundEndTime != null ? roundEndTime() : this.roundEndTime,
+      players: players ?? this.players,
     );
   }
 }
