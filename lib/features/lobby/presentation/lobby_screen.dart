@@ -6,6 +6,7 @@ import 'package:firebase_database/firebase_database.dart';
 import '../../game/data/game_repository.dart';
 import '../../game/provider/game_provider.dart';
 import '../models/lobby_info.dart';
+import 'widgets/lobby_card_widget.dart';
 
 class LobbyScreen extends ConsumerStatefulWidget {
   const LobbyScreen({super.key});
@@ -227,35 +228,20 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
                   );
                 }
 
-                return ListView.builder(
+                return GridView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 1.2,
+                  ),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final lobby = filtered[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: ListTile(
-                        title: Text(lobby.lobbyName),
-                        subtitle: Text(
-                          '${lobby.hostUsername} • ${lobby.playerCount}/${lobby.maxPlayers}',
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (lobby.hasPassword)
-                              const Icon(Icons.lock, size: 20)
-                            else
-                              const SizedBox.shrink(),
-                            const SizedBox(width: 8),
-                            const Icon(Icons.chevron_right),
-                          ],
-                        ),
-                        onTap: _busy || lobby.isFull
-                            ? null
-                            : () => _joinLobby(lobby),
-                      ),
+                    return LobbyCardWidget(
+                      lobby: lobby,
+                      onTap: _busy || lobby.isFull ? null : () => _joinLobby(lobby),
                     );
                   },
                 );
