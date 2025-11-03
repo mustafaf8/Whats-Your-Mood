@@ -158,276 +158,235 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     final otherPlayers = gameState.players
         .where((p) => p.userId != userId)
         .toList();
+    final me = gameState.players.firstWhere(
+      (p) => p.userId == userId,
+      orElse: () => const PlayerStatus(
+        userId: 'me',
+        username: 'Ben',
+        hasPlayed: false,
+        isHost: false,
+      ),
+    );
 
-    return Stack(
+    return Column(
       children: [
-        // Alt: Mevcut oyuncunun eli
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 250,
-          child: gameState.isRevealed
-              ? Center(
-                  child: ElevatedButton(
-                    onPressed: gameState.currentRound >= gameState.totalRounds
-                        ? () => _showGameFinishedDialog(context)
-                        : null,
-                    child: const Text('Oyun Bitti'),
-                  ),
-                )
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    final cards = gameState.currentPhotoCards;
-                    final total = cards.length;
-                    const double cardWidth = 140;
-                    const double cardHeight = 180;
-                    final double baseBottom = constraints.maxHeight * 0.06;
-                    final double selectedLift = constraints.maxHeight * 0.22;
-                    final double horizontalSpread = constraints.maxWidth * 0.12;
-                    final indices = List<int>.generate(total, (i) => i);
-                    return Stack(
-                      alignment: Alignment.center,
-                      children: indices.map((index) {
-                        final photoCard = cards[index];
-                        final isSelected = selectedPhotoId == photoCard.id;
-                        final double baseLeft =
-                            constraints.maxWidth / 2 +
-                            (index - (total / 2) + 0.5) * horizontalSpread -
-                            (cardWidth / 2);
-                        final double bottom = isSelected
-                            ? baseBottom + selectedLift
-                            : baseBottom;
-                        final double angle = isSelected
-                            ? 0
-                            : (index - (total / 2) + 0.5) * 0.15;
-                        return AnimatedPositioned(
-                          key: ValueKey(photoCard.id),
-                          duration: const Duration(milliseconds: 400),
-                          curve: Curves.easeInOut,
-                          left: baseLeft.clamp(
-                            0.0,
-                            constraints.maxWidth - cardWidth,
-                          ),
-                          bottom: bottom,
-                          width: cardWidth,
-                          height: cardHeight,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 400),
-                            curve: Curves.easeInOut,
-                            transform: Matrix4.rotationZ(angle),
-                            transformAlignment: Alignment.bottomCenter,
-                            child: PhotoCardWidget(
-                              photoCard: photoCard,
-                              onTap: () {
-                                if (gameState.hasPlayed) return;
-                                final String currentCardId = photoCard.id;
-                                final bool isAlreadySelected =
-                                    selectedPhotoId == currentCardId;
-                                if (isAlreadySelected) {
-                                  _playCard(
-                                    currentCardId,
-                                    gameState.currentRound,
-                                  );
-                                } else {
-                                  setState(() {
-                                    selectedPhotoId = currentCardId;
-                                  });
-                                }
-                              },
-                              isSelected: isSelected,
-                              isRevealed: false,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    );
-                  },
-                ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 8,
+            children: otherPlayers
+                .map((p) => AnimatedScale(
+                      scale: p.hasPlayed ? 1.05 : 1.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: PlayerAvatarWidget(player: p),
+                    ))
+                .toList(),
+          ),
         ),
-        // Üst: Mood kartı veya Grid (ortalanmış)
-        if (!gameState.isRevealed)
-          Positioned.fill(
-            top: 120,
-            bottom: 270,
-            child: Center(
-              child: MoodCardWidget(
-                text: gameState.currentMoodCard?.text ?? 'Mood',
-              ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              child: gameState.isRevealed
+                  ? _buildRevealedArea(gameState)
+                  : Column(
+                      key: const ValueKey('play'),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        MoodCardWidget(
+                          text: gameState.currentMoodCard?.text ?? 'Mood',
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Bir kart seçin ve oynayın',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
             ),
           ),
+        ),
         if (gameState.isRevealed)
-          Positioned.fill(
-            top: 120,
-            bottom: 270,
-            child: GridView.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              padding: const EdgeInsets.all(20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _buildHostRevealControls(gameState, l10n, context),
+          ),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            child: _buildMyPlayerArea(me, gameState),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRevealedArea(GameState gameState) {
+    return Column(
+      key: const ValueKey('reveal'),
+      children: [
+        Align(
+          alignment: Alignment.topCenter,
+          child: AnimatedScale(
+            duration: const Duration(milliseconds: 300),
+            scale: 0.9,
+            child: MoodCardWidget(
+              text: gameState.currentMoodCard?.text ?? 'Mood',
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
               children: gameState.playedCardIds.entries.map((e) {
                 final username = gameState.playersUsernames[e.key] ?? e.key;
                 final photoId = e.value;
                 final photo = findPhotoCardById(photoId);
                 if (photo == null) {
-                  return Card(child: Center(child: Text(username)));
-                }
-                return Column(
-                  children: [
-                    Expanded(
-                      child: PhotoCardWidget(
-                        photoCard: photo,
-                        onTap: () {},
-                        isSelected: false,
-                        isRevealed: true,
+                  return SizedBox(
+                    width: 160,
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Center(child: Text(username)),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      username,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                  );
+                }
+                return SizedBox(
+                  width: 160,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AspectRatio(
+                        aspectRatio: 140 / 180,
+                        child: Hero(
+                          tag: 'photo-${photo.id}',
+                          child: PhotoCardWidget(
+                            photoCard: photo,
+                            onTap: () {},
+                            isSelected: false,
+                            isRevealed: true,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        username,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 );
               }).toList(),
             ),
           ),
-        // Oyuncu avatarları - Üstte kenarlar
-        ..._buildPlayerPositions(otherPlayers, context),
-        // Durum mesajı
-        if (!gameState.isRevealed)
-          Positioned(
-            top: 70,
-            left: 20,
-            right: 20,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: gameState.hasPlayed
-                    ? Colors.green.shade100
-                    : Colors.blue.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                gameState.hasPlayed
-                    ? 'Kartınız oynandı! Diğer oyuncuları bekleyin...'
-                    : 'Bir kart seçin ve oynayın',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ),
-          ),
-        // Host butonu
-        if (gameState.isRevealed)
-          Builder(
-            builder: (context) {
-              final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-              final isHost =
-                  currentUserId != null && currentUserId == gameState.hostId;
-              if (!isHost) return const SizedBox.shrink();
-              return Positioned(
-                bottom: 270,
-                left: 20,
-                right: 20,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    setState(() {
-                      selectedPhotoId = null;
-                    });
-                    if (gameState.currentRound >= gameState.totalRounds) {
-                      _showGameFinishedDialog(context);
-                      return;
-                    }
-                    await ref
-                        .read(gameRepositoryProvider)
-                        .hostNextRound(widget.gameId);
-                  },
-                  child: Text(
-                    gameState.currentRound < gameState.totalRounds
-                        ? l10n.nextRound
-                        : l10n.finishGame,
-                  ),
-                ),
-              );
-            },
-          ),
+        ),
       ],
     );
   }
 
-  List<Widget> _buildPlayerPositions(
-    List<PlayerStatus> players,
+  Widget _buildMyPlayerArea(PlayerStatus me, GameState gameState) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            AnimatedScale(
+              scale: me.hasPlayed ? 1.06 : 1.0,
+              duration: const Duration(milliseconds: 250),
+              child: PlayerAvatarWidget(player: me, isMe: true),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  '${gameState.currentRound}/${gameState.totalRounds}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 190,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            itemBuilder: (context, index) {
+              final photoCard = gameState.currentPhotoCards[index];
+              final bool isSelected = selectedPhotoId == photoCard.id;
+              return SizedBox(
+                width: 140,
+                child: Hero(
+                  tag: 'photo-${photoCard.id}',
+                  child: PhotoCardWidget(
+                    photoCard: photoCard,
+                    onTap: () {
+                    if (gameState.hasPlayed) return;
+                    final String currentCardId = photoCard.id;
+                    final bool already = selectedPhotoId == currentCardId;
+                    if (already) {
+                      _playCard(currentCardId, gameState.currentRound);
+                    } else {
+                      setState(() => selectedPhotoId = currentCardId);
+                    }
+                  },
+                  isSelected: isSelected,
+                  isRevealed: false,
+                  ),
+                ),
+              );
+            },
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemCount: gameState.currentPhotoCards.length,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHostRevealControls(
+    GameState gameState,
+    AppLocalizations l10n,
     BuildContext context,
   ) {
-    if (players.isEmpty) return [];
-    final positions = <Widget>[];
-    final total = players.length;
-
-    if (total == 1) {
-      // Tek oyuncu - sol üst
-      positions.add(
-        Positioned(
-          top: 20,
-          left: 20,
-          child: PlayerAvatarWidget(player: players[0]),
-        ),
-      );
-    } else if (total == 2) {
-      // İki oyuncu - sol ve sağ üst
-      positions.add(
-        Positioned(
-          top: 20,
-          left: 20,
-          child: PlayerAvatarWidget(player: players[0]),
-        ),
-      );
-      positions.add(
-        Positioned(
-          top: 20,
-          right: 20,
-          child: PlayerAvatarWidget(player: players[1]),
-        ),
-      );
-    } else if (total >= 3) {
-      // 3+ oyuncu - sol, üst merkez, sağ
-      positions.add(
-        Positioned(
-          top: 20,
-          left: 20,
-          child: PlayerAvatarWidget(player: players[0]),
-        ),
-      );
-      positions.add(
-        Positioned(
-          top: 20,
-          left: 0,
-          right: 0,
-          child: Center(child: PlayerAvatarWidget(player: players[1])),
-        ),
-      );
-      positions.add(
-        Positioned(
-          top: 20,
-          right: 20,
-          child: PlayerAvatarWidget(player: players[2]),
-        ),
-      );
-      // Ekstra oyuncular için sol taraf
-      if (total > 3) {
-        for (int i = 3; i < total; i++) {
-          positions.add(
-            Positioned(
-              top: 120 + (i - 3) * 80,
-              left: 20,
-              child: PlayerAvatarWidget(player: players[i]),
-            ),
-          );
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final isHost = currentUserId != null && currentUserId == gameState.hostId;
+    if (!isHost) return const SizedBox.shrink();
+    return ElevatedButton(
+      onPressed: () async {
+        setState(() {
+          selectedPhotoId = null;
+        });
+        if (gameState.currentRound >= gameState.totalRounds) {
+          _showGameFinishedDialog(context);
+          return;
         }
-      }
-    }
-    return positions;
+        await ref.read(gameRepositoryProvider).hostNextRound(widget.gameId);
+      },
+      child: Text(
+        gameState.currentRound < gameState.totalRounds
+            ? l10n.nextRound
+            : l10n.finishGame,
+      ),
+    );
   }
+
+  
 
   void _showGameFinishedDialog(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
