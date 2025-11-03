@@ -3,12 +3,14 @@ class UserProfile {
   final int gamesPlayed;
   final int roundsWon;
   final String favoriteMood;
+  final String? avatarPath;
 
   const UserProfile({
     required this.username,
     required this.gamesPlayed,
     required this.roundsWon,
     required this.favoriteMood,
+    this.avatarPath,
   });
 
   UserProfile copyWith({
@@ -16,12 +18,14 @@ class UserProfile {
     int? gamesPlayed,
     int? roundsWon,
     String? favoriteMood,
+    String? avatarPath,
   }) {
     return UserProfile(
       username: username ?? this.username,
       gamesPlayed: gamesPlayed ?? this.gamesPlayed,
       roundsWon: roundsWon ?? this.roundsWon,
       favoriteMood: favoriteMood ?? this.favoriteMood,
+      avatarPath: avatarPath ?? this.avatarPath,
     );
   }
 
@@ -31,6 +35,7 @@ class UserProfile {
       'gamesPlayed': gamesPlayed,
       'roundsWon': roundsWon,
       'favoriteMood': favoriteMood,
+      'avatarPath': avatarPath,
     };
   }
 
@@ -40,6 +45,7 @@ class UserProfile {
       gamesPlayed: json['gamesPlayed'] as int,
       roundsWon: json['roundsWon'] as int,
       favoriteMood: json['favoriteMood'] as String,
+      avatarPath: json['avatarPath'] as String?,
     );
   }
 }

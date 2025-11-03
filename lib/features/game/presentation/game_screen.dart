@@ -93,7 +93,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.lightGray,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: asyncGame.when(
           data: (game) => Row(

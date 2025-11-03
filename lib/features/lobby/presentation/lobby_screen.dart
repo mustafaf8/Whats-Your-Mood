@@ -177,6 +177,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
     final lobbiesAsync = ref.watch(activeLobbiesProvider);
     
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('Oyun Lobisi')),
       body: Column(
         children: [

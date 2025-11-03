@@ -13,6 +13,7 @@ class ProfileScreen extends ConsumerWidget {
     final profileAsync = ref.watch(profileProvider);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text(l10n.profile),
         backgroundColor: AppColors.gradientStart,
@@ -25,7 +26,7 @@ class ProfileScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 16),
-              // Username Card
+              // Avatar + Username Card
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
@@ -35,10 +36,19 @@ class ProfileScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
-                      const Icon(
-                        Icons.person,
-                        size: 64,
-                        color: AppColors.gradientStart,
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: AppColors.gradientStart,
+                        backgroundImage: profile.avatarPath != null
+                            ? AssetImage(profile.avatarPath!)
+                            : null,
+                        child: profile.avatarPath == null
+                            ? const Icon(
+                                Icons.person,
+                                size: 48,
+                                color: AppColors.white,
+                              )
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -47,6 +57,71 @@ class ProfileScreen extends ConsumerWidget {
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Avatar Seçimi
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.profile, // başlık basitçe
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 1,
+                        ),
+                        itemCount: 8,
+                        itemBuilder: (context, index) {
+                          final id = index + 1;
+                          final path = 'lib/assets/avatar/' '$id' '.png';
+                          final isSelected = profile.avatarPath == path;
+                          return InkWell(
+                            onTap: () =>
+                                ref.read(profileProvider.notifier).setAvatar(path),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.gradientStart
+                                      : Colors.grey.shade300,
+                                  width: isSelected ? 2 : 1,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.all(6),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.asset(
+                                  path,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
