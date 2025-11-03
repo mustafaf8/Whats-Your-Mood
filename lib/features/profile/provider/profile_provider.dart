@@ -13,6 +13,7 @@ Future<UserProfile> _fetchUserProfile() async {
     gamesPlayed: 12,
     roundsWon: 45,
     favoriteMood: 'Ne zaman mutlu hissediyorum?',
+    avatarPath: 'lib/assets/avatar/5.png',
   );
 }
 
@@ -25,6 +26,13 @@ class ProfileNotifier extends AsyncNotifier<UserProfile> {
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => _fetchUserProfile());
+  }
+
+  void setAvatar(String path) {
+    final current = state.value;
+    if (current == null) return;
+    state = AsyncValue.data(current.copyWith(avatarPath: path));
+    // TODO: Persist to backend when integrated
   }
 }
 
