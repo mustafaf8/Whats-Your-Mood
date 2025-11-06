@@ -93,8 +93,8 @@ class GameRepository {
       if (mutable is! Map) {
         return Transaction.success(mutable);
       }
-      final map = Map<String, dynamic>.from(mutable as Map);
-      final deck = Map<String, dynamic>.from((map['deck'] as Map?) ?? {});
+      final map = Map<String, dynamic>.from(mutable);
+      final deck = _asMap(map['deck']);
       final photoList = List.from((deck['photoCards'] as List?) ?? []);
       // 5 kart çek
       final take = photoList.take(5).toList();
@@ -102,7 +102,7 @@ class GameRepository {
       final hand = {for (final id in take) id.toString(): true};
 
       // players
-      final players = Map<String, dynamic>.from((map['players'] as Map?) ?? {});
+      final players = _asMap(map['players']);
       players[userId] = {'username': username, 'score': 0, 'hand': hand};
 
       deck['photoCards'] = remaining;
@@ -124,7 +124,7 @@ class GameRepository {
     return ref.onValue.map((event) {
       final value = event.snapshot.value;
       if (value is Map) {
-        return Map<String, dynamic>.from(value as Map);
+        return Map<String, dynamic>.from(value);
       }
       return null;
     });
@@ -168,17 +168,30 @@ class GameRepository {
     });
   }
 
+  Map<String, dynamic> _asMap(dynamic value) {
+    if (value is Map) return Map<String, dynamic>.from(value);
+    if (value is List) {
+      final result = <String, dynamic>{};
+      for (var i = 0; i < value.length; i++) {
+        final element = value[i];
+        if (element != null) result['$i'] = element;
+      }
+      return result;
+    }
+    return <String, dynamic>{};
+  }
+
   Future<void> hostNextRound(String gameId) async {
     final gameRef = _gamesRef().child(gameId);
     await gameRef.runTransaction((mutable) {
       if (mutable is! Map) return Transaction.success(mutable);
-      final map = Map<String, dynamic>.from(mutable as Map);
+      final map = Map<String, dynamic>.from(mutable);
 
       final int currentRound = ((map['currentRound'] as num?)?.toInt() ?? 1);
       final int nextRound = currentRound + 1;
 
       // Decks
-      final deck = Map<String, dynamic>.from((map['deck'] as Map?) ?? {});
+      final deck = _asMap(map['deck']);
       final moodCards = List.from((deck['moodCards'] as List?) ?? []);
       final photoCards = List.from((deck['photoCards'] as List?) ?? []);
 
@@ -187,13 +200,13 @@ class GameRepository {
       final nextMoodId = moodCards.removeAt(0).toString();
 
       // Oyuncu listesi
-      final players = Map<String, dynamic>.from((map['players'] as Map?) ?? {});
+      final players = _asMap(map['players']);
 
       // Her oyuncuya 1 foto kartı dağıt
       for (final entry in players.entries) {
         final pid = entry.key;
-        final pdata = Map<String, dynamic>.from((entry.value as Map?) ?? {});
-        final hand = Map<String, dynamic>.from((pdata['hand'] as Map?) ?? {});
+        final pdata = _asMap(entry.value);
+        final hand = _asMap(pdata['hand']);
         if (photoCards.isNotEmpty) {
           final drawId = photoCards.removeAt(0).toString();
           hand[drawId] = true;
@@ -202,8 +215,8 @@ class GameRepository {
         players[pid] = pdata;
       }
 
-      // Rounds güncelle
-      final rounds = Map<String, dynamic>.from((map['rounds'] as Map?) ?? {});
+      // Rounds güncelle - List veya Map olabilir
+      final rounds = _asMap(map['rounds']);
       rounds['$nextRound'] = {
         'moodCardId': nextMoodId,
         'playedCards': {},
@@ -218,6 +231,7 @@ class GameRepository {
       deck['photoCards'] = photoCards;
       map['deck'] = deck;
       map['players'] = players;
+      map['rounds'] = rounds;
 
       return Transaction.success(map);
     });
