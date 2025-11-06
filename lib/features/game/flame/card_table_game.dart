@@ -1,44 +1,18 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
-import 'package:flame_riverpod/flame_riverpod.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../provider/game_provider.dart';
 import '../models/game_state.dart';
 import 'components/flame_mood_card.dart';
 import 'components/flame_photo_card.dart';
 
-class CardTableGame extends FlameGame with HasGameRef, RiverpodGameMixin {
+class CardTableGame extends FlameGame {
   final String gameId;
   final Set<String> _activeCardIds = {};
-  WidgetRef? _ref;
 
   CardTableGame(this.gameId);
 
-  void setRef(WidgetRef ref) {
-    _ref = ref;
-    _startListening();
-  }
-
-  @override
-  Future<void> onLoad() async {
-    await super.onLoad();
-    if (_ref != null) {
-      _startListening();
-    }
-  }
-
-  void _startListening() {
-    if (_ref == null) return;
-    
-    _ref!.listen(
-      gameStreamProvider(gameId),
-      (previous, next) {
-        next.whenData((gameState) {
-          updateTableFromState(gameState);
-        });
-      },
-    );
+  void updateGameState(GameState gameState) {
+    updateTableFromState(gameState);
   }
 
   void updateTableFromState(GameState gameState) {
