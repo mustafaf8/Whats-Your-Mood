@@ -6,57 +6,74 @@ import 'package:flame/sprite.dart';
 import '../models/game_state.dart';
 import 'components/flame_mood_card.dart';
 import 'components/flame_photo_card.dart';
+import 'components/tiled_sprite_component.dart';
 
 class CardTableGame extends FlameGame {
   final String gameId;
   final Set<String> _activeCardIds = {};
   Component? _tableBackground;
+  bool _isSizeReady = false;
+  GameState? _pendingGameState;
+  Vector2 _currentSize = Vector2.zero();
 
   CardTableGame(this.gameId);
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    _loadTableBackground();
   }
 
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
-    if (_tableBackground != null && size.x > 0 && size.y > 0) {
-      if (_tableBackground is SpriteComponent) {
-        (_tableBackground as SpriteComponent).size = size;
-      } else if (_tableBackground is RectangleComponent) {
-        (_tableBackground as RectangleComponent).size = size;
+    _currentSize = size;
+    _isSizeReady = size.x > 0 && size.y > 0;
+    
+    if (_isSizeReady) {
+      if (_tableBackground == null) {
+        _loadTableBackground();
+      } else {
+        if (_tableBackground is TiledSpriteComponent) {
+          (_tableBackground as TiledSpriteComponent).size = size;
+        } else if (_tableBackground is RectangleComponent) {
+          (_tableBackground as RectangleComponent).size = size;
+        }
       }
-    } else if (_tableBackground == null) {
-      _loadTableBackground();
+      
+      if (_pendingGameState != null) {
+        final state = _pendingGameState!;
+        _pendingGameState = null;
+        updateTableFromState(state);
+      }
     }
   }
 
   Future<void> _loadTableBackground() async {
-    if (size.x == 0 || size.y == 0) return;
+    if (!_isSizeReady || _currentSize.x == 0 || _currentSize.y == 0) return;
 
     try {
       final tableSprite = await Sprite.load('table_felt.png');
-      _tableBackground = SpriteComponent(
+      // Sprite'ın orijinal boyutunu kullanarak tile pattern oluştur
+      _tableBackground = TiledSpriteComponent(
         sprite: tableSprite,
-        size: size,
+        size: _currentSize,
+        tileSize: tableSprite.originalSize,
         anchor: Anchor.topLeft,
       )..priority = -1;
       add(_tableBackground!);
     } catch (e) {
       try {
-        final tableSprite = await Sprite.load('paper.png');
-        _tableBackground = SpriteComponent(
-          sprite: tableSprite,
-          size: size,
+        final paperSprite = await Sprite.load('paper.png');
+        _tableBackground = TiledSpriteComponent(
+          sprite: paperSprite,
+          size: _currentSize,
+          tileSize: paperSprite.originalSize,
           anchor: Anchor.topLeft,
         )..priority = -1;
         add(_tableBackground!);
       } catch (_) {
         _tableBackground = RectangleComponent(
-          size: size,
+          size: _currentSize,
           paint: Paint()..color = const Color(0xFF2D5016),
         )..priority = -1;
         add(_tableBackground!);
@@ -65,10 +82,19 @@ class CardTableGame extends FlameGame {
   }
 
   void updateGameState(GameState gameState) {
+    if (!_isSizeReady) {
+      _pendingGameState = gameState;
+      return;
+    }
     updateTableFromState(gameState);
   }
 
   void updateTableFromState(GameState gameState) {
+    if (!_isSizeReady || _currentSize.x == 0 || _currentSize.y == 0) {
+      _pendingGameState = gameState;
+      return;
+    }
+
     final newCardIds = <String>{};
 
     if (gameState.currentMoodCard != null) {
@@ -78,7 +104,7 @@ class CardTableGame extends FlameGame {
       if (!_activeCardIds.contains(moodCardId)) {
         final moodCard = FlameMoodCard(
           gameState.currentMoodCard!,
-          position: Vector2(size.x / 2, size.y * 0.25),
+          position: Vector2(_currentSize.x / 2, _currentSize.y * 0.25),
         );
         add(moodCard);
         _activeCardIds.add(moodCardId);
@@ -87,11 +113,13 @@ class CardTableGame extends FlameGame {
 
     if (gameState.isRevealed) {
       final playerCount = gameState.playedCardIds.length;
+      if (playerCount == 0) return;
+      
       final double fanAngle = 1.2;
       final double startAngle = -(fanAngle / 2);
       final double angleStep = playerCount > 1 ? fanAngle / (playerCount - 1) : 0;
-      final double radius = size.y * 0.45;
-      final fanCenter = Vector2(size.x / 2, size.y * 0.65);
+      final double radius = _currentSize.y * 0.45;
+      final fanCenter = Vector2(_currentSize.x / 2, _currentSize.y * 0.65);
 
       int index = 0;
 

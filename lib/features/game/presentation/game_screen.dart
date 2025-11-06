@@ -30,6 +30,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   int _remainingSeconds = 0;
   late final CardTableGame _game;
   bool _listenerInitialized = false;
+  DateTime? _lastRoundEndTime;
+  GameState? _lastGameState;
 
   @override
   void initState() {
@@ -44,8 +46,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   void _startTimer(DateTime? roundEndTime) {
+    if (_lastRoundEndTime == roundEndTime) return;
+    _lastRoundEndTime = roundEndTime;
+
     _roundTimer?.cancel();
-    if (roundEndTime == null) return;
+    if (roundEndTime == null) {
+      setState(() => _remainingSeconds = 0);
+      return;
+    }
 
     _roundTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
@@ -60,7 +68,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         _remainingSeconds = diff > 0 ? diff : 0;
       });
 
-      // Zaman doldu ve kart oynamadıysa otomatik oyna
       if (diff <= 0) {
         timer.cancel();
         _autoPlayCard();
@@ -69,6 +76,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   Future<void> _autoPlayCard() async {
+    if (!mounted) return;
+
     final asyncGame = ref.read(gameStreamProvider(widget.gameId));
     if (!asyncGame.hasValue) return;
 
@@ -83,16 +92,56 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   Future<void> _playCard(String cardId, int currentRound) async {
+    if (!mounted) return;
+
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
-    await ref
-        .read(gameRepositoryProvider)
-        .playCard(
-          gameId: widget.gameId,
-          round: currentRound,
-          userId: userId,
-          cardId: cardId,
+
+    try {
+      await ref
+          .read(gameRepositoryProvider)
+          .playCard(
+            gameId: widget.gameId,
+            round: currentRound,
+            userId: userId,
+            cardId: cardId,
+          );
+      if (mounted) {
+        setState(() => selectedPhotoId = null);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kart oynanırken hata: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
+      }
+    }
+  }
+
+  void _initializeListener() {
+    if (_listenerInitialized) return;
+    _listenerInitialized = true;
+
+    ref.listen(gameStreamProvider(widget.gameId), (previous, next) {
+      next.whenData((gameState) {
+        if (mounted) {
+          _game.updateGameState(gameState);
+        }
+      });
+    });
+  }
+
+  void _updateGameState(GameState gameState) {
+    if (_lastGameState == gameState) return;
+    _lastGameState = gameState;
+
+    if (mounted) {
+      _game.updateGameState(gameState);
+    }
   }
 
   @override
@@ -100,17 +149,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     final asyncGame = ref.watch(gameStreamProvider(widget.gameId));
     final l10n = AppLocalizations.of(context)!;
 
-    if (!_listenerInitialized) {
-      _listenerInitialized = true;
-      ref.listen(gameStreamProvider(widget.gameId), (previous, next) {
-        next.whenData((gameState) {
-          _game.updateGameState(gameState);
-        });
-      });
-      asyncGame.whenData((gameState) {
-        _game.updateGameState(gameState);
-      });
-    }
+    _initializeListener();
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -120,7 +159,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('${l10n.round} ${game.currentRound}/${game.totalRounds}'),
-              if (game.status == 'playing' && !game.isRevealed)
+              if (game.status == 'playing' &&
+                  !game.isRevealed &&
+                  _remainingSeconds > 0)
                 Padding(
                   padding: const EdgeInsets.only(left: 16),
                   child: Container(
@@ -145,7 +186,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 ),
             ],
           ),
-          loading: () => const Text('Loading...'),
+          loading: () => const Text('Yükleniyor...'),
           error: (_, __) => const Text('Hata'),
         ),
         backgroundColor: AppColors.gradientStart,
@@ -154,20 +195,58 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       drawer: const DrawerMenu(),
       body: asyncGame.when(
         data: (gameState) {
-          // Zamanlayıcıyı başlat
+          _updateGameState(gameState);
+
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _startTimer(gameState.roundEndTime);
+            if (mounted) {
+              _startTimer(gameState.roundEndTime);
+            }
           });
 
           if (gameState.currentMoodCard == null) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Masa düzeni için Stack kullan
+          if (gameState.currentPhotoCards.isEmpty && !gameState.isRevealed) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.inbox, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Kartlar yükleniyor...',
+                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            );
+          }
+
           return _buildTableLayout(gameState, context);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        error: (e, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                'Hata: $e',
+                style: const TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  ref.invalidate(gameStreamProvider(widget.gameId));
+                },
+                child: const Text('Yeniden Dene'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -190,32 +269,49 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 12,
-            runSpacing: 8,
-            children: otherPlayers
-                .map(
-                  (p) => AnimatedScale(
-                    scale: p.hasPlayed ? 1.05 : 1.0,
-                    duration: const Duration(milliseconds: 300),
-                    child: PlayerAvatarWidget(player: p),
-                  ),
-                )
-                .toList(),
+        if (otherPlayers.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 12,
+              runSpacing: 8,
+              children: otherPlayers
+                  .map(
+                    (p) => AnimatedScale(
+                      scale: p.hasPlayed ? 1.05 : 1.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: PlayerAvatarWidget(player: p),
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
-        ),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: GameWidget<CardTableGame>(game: _game),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: GameWidget<CardTableGame>(game: _game),
+              ),
+            ),
           ),
         ),
         if (gameState.isRevealed)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: _buildHostRevealControls(gameState, l10n, context),
           ),
         SafeArea(
@@ -230,6 +326,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   Widget _buildMyPlayerArea(PlayerStatus me, GameState gameState) {
+    if (gameState.currentPhotoCards.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -246,7 +346,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 alignment: Alignment.centerRight,
                 child: Text(
                   '${gameState.currentRound}/${gameState.totalRounds}',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -259,24 +362,33 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             itemBuilder: (context, index) {
+              if (index >= gameState.currentPhotoCards.length) {
+                return const SizedBox.shrink();
+              }
+
               final photoCard = gameState.currentPhotoCards[index];
               final bool isSelected = selectedPhotoId == photoCard.id;
+              final bool canPlay =
+                  !gameState.hasPlayed && !gameState.isRevealed;
+
               return SizedBox(
                 width: 140,
                 child: Hero(
                   tag: 'photo-${photoCard.id}',
                   child: PhotoCardWidget(
                     photoCard: photoCard,
-                    onTap: () {
-                      if (gameState.hasPlayed) return;
-                      final String currentCardId = photoCard.id;
-                      final bool already = selectedPhotoId == currentCardId;
-                      if (already) {
-                        _playCard(currentCardId, gameState.currentRound);
-                      } else {
-                        setState(() => selectedPhotoId = currentCardId);
-                      }
-                    },
+                    onTap: canPlay
+                        ? () {
+                            final String currentCardId = photoCard.id;
+                            final bool already =
+                                selectedPhotoId == currentCardId;
+                            if (already) {
+                              _playCard(currentCardId, gameState.currentRound);
+                            } else {
+                              setState(() => selectedPhotoId = currentCardId);
+                            }
+                          }
+                        : () {},
                     isSelected: isSelected,
                     isRevealed: false,
                   ),
@@ -298,22 +410,45 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   ) {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     final isHost = currentUserId != null && currentUserId == gameState.hostId;
+
     if (!isHost) return const SizedBox.shrink();
+
     return ElevatedButton(
       onPressed: () async {
         setState(() {
           selectedPhotoId = null;
         });
+
         if (gameState.currentRound >= gameState.totalRounds) {
           _showGameFinishedDialog(context);
           return;
         }
-        await ref.read(gameRepositoryProvider).hostNextRound(widget.gameId);
+
+        try {
+          await ref.read(gameRepositoryProvider).hostNextRound(widget.gameId);
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Tur başlatılırken hata: $e'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
       },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.gradientStart,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
       child: Text(
         gameState.currentRound < gameState.totalRounds
             ? l10n.nextRound
             : l10n.finishGame,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -322,8 +457,16 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text('🎉 ${l10n.gameCompleted}'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Text('🎉'),
+            const SizedBox(width: 12),
+            Expanded(child: Text(l10n.gameCompleted)),
+          ],
+        ),
         content: Text(l10n.gameCompletedDesc),
         actions: [
           TextButton(
@@ -332,11 +475,15 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             },
             child: Text(l10n.playAgain),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              context.go('/');
+              context.go('/lobby');
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.gradientStart,
+              foregroundColor: Colors.white,
+            ),
             child: Text(l10n.homePage),
           ),
         ],
