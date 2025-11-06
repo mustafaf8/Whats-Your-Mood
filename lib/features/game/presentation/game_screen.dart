@@ -37,12 +37,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _game.setRef(ref);
-  }
-
-  @override
   void dispose() {
     _roundTimer?.cancel();
     super.dispose();
@@ -104,6 +98,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Widget build(BuildContext context) {
     final asyncGame = ref.watch(gameStreamProvider(widget.gameId));
     final l10n = AppLocalizations.of(context)!;
+
+    ref.listen(gameStreamProvider(widget.gameId), (previous, next) {
+      next.whenData((gameState) {
+        _game.updateGameState(gameState);
+      });
+    });
 
     return Scaffold(
       backgroundColor: Colors.transparent,
