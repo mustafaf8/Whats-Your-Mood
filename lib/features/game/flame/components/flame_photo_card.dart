@@ -98,34 +98,32 @@ class FlamePhotoCard extends PositionComponent with HasPaint {
 
   @override
   void render(Canvas canvas) {
+    final shadowPaint = Paint()
+      ..color = const Color(0x33000000)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    
+    final shadowRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(4, 4, size.x - 8, size.y - 8),
+      const Radius.circular(16),
+    );
+    canvas.drawRRect(shadowRect, shadowPaint);
+
     final fillPaint = Paint()
       ..color = const Color(0xFFFFFFFF)
       ..style = PaintingStyle.fill;
     
-    final borderPaint = Paint()
-      ..color = const Color(0xFFE0E0E0)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    final rect = RRect.fromRectAndRadius(
+    final cardRect = RRect.fromRectAndRadius(
       Rect.fromLTWH(0, 0, size.x, size.y),
       const Radius.circular(16),
     );
+    canvas.drawRRect(cardRect, fillPaint);
 
-    canvas.drawRRect(rect, fillPaint);
-    canvas.drawRRect(rect, borderPaint);
+    final borderPaint = Paint()
+      ..color = const Color(0xFFE0E0E0)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
 
-    final shadowPaint = Paint()
-      ..color = const Color(0x1A000000)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-    
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 2, size.x, size.y),
-        const Radius.circular(16),
-      ),
-      shadowPaint,
-    );
+    canvas.drawRRect(cardRect, borderPaint);
 
     super.render(canvas);
   }

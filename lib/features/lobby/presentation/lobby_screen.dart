@@ -20,6 +20,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
   final TextEditingController _username = TextEditingController(text: 'Oyuncu');
   final TextEditingController _searchController = TextEditingController();
   bool _busy = false;
+  bool _hasSearchText = false;
 
   late final GameRepository _repo;
 
@@ -179,85 +180,140 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
     
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('Oyun Lobisi')),
-      drawer: const DrawerMenu(),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  controller: _username,
-                  decoration: const InputDecoration(
-                    labelText: 'Kullanıcı adı',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    labelText: 'Ara...',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () => _searchController.clear(),
-                    ),
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: lobbiesAsync.when(
-              data: (lobbies) {
-                final searchQuery = _searchController.text.toLowerCase();
-                final filtered = lobbies.where((lobby) {
-                  if (searchQuery.isEmpty) return true;
-                  return lobby.lobbyName.toLowerCase().contains(searchQuery) ||
-                      lobby.hostUsername.toLowerCase().contains(searchQuery);
-                }).toList();
-
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Text(
-                      searchQuery.isEmpty
-                          ? 'Aktif lobi yok'
-                          : 'Sonuç bulunamadı',
-                    ),
-                  );
-                }
-
-                return GridView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.2,
-                  ),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final lobby = filtered[index];
-                    return LobbyCardWidget(
-                      lobby: lobby,
-                      onTap: _busy || lobby.isFull ? null : () => _joinLobby(lobby),
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Hata: $e')),
-            ),
-          ),
-        ],
+      appBar: AppBar(
+        title: const Text('Oyun Lobisi'),
+        elevation: 0,
       ),
-      floatingActionButton: FloatingActionButton(
+      drawer: const DrawerMenu(),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: TextField(
+                        controller: _username,
+                        decoration: const InputDecoration(
+                          labelText: 'Kullanıcı adı',
+                          border: InputBorder.none,
+                          prefixIcon: Icon(Icons.person),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          labelText: 'Ara...',
+                          border: InputBorder.none,
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: _hasSearchText
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() {
+                                      _hasSearchText = false;
+                                    });
+                                  },
+                                )
+                              : null,
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _hasSearchText = value.isNotEmpty;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: lobbiesAsync.when(
+                data: (lobbies) {
+                  final searchQuery = _searchController.text.toLowerCase();
+                  final filtered = lobbies.where((lobby) {
+                    if (searchQuery.isEmpty) return true;
+                    return lobby.lobbyName.toLowerCase().contains(searchQuery) ||
+                        lobby.hostUsername.toLowerCase().contains(searchQuery);
+                  }).toList();
+
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            searchQuery.isEmpty ? Icons.games_outlined : Icons.search_off,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            searchQuery.isEmpty
+                                ? 'Aktif lobi yok'
+                                : 'Sonuç bulunamadı',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return GridView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 1.2,
+                    ),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final lobby = filtered[index];
+                      return LobbyCardWidget(
+                        lobby: lobby,
+                        onTap: _busy || lobby.isFull ? null : () => _joinLobby(lobby),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text('Hata: $e'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _busy ? null : _showCreateLobbyDialog,
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Yeni Lobi'),
       ),
     );
   }

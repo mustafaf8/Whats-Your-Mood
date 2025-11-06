@@ -29,6 +29,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Timer? _roundTimer;
   int _remainingSeconds = 0;
   late final CardTableGame _game;
+  bool _listenerInitialized = false;
 
   @override
   void initState() {
@@ -99,11 +100,17 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     final asyncGame = ref.watch(gameStreamProvider(widget.gameId));
     final l10n = AppLocalizations.of(context)!;
 
-    ref.listen(gameStreamProvider(widget.gameId), (previous, next) {
-      next.whenData((gameState) {
+    if (!_listenerInitialized) {
+      _listenerInitialized = true;
+      ref.listen(gameStreamProvider(widget.gameId), (previous, next) {
+        next.whenData((gameState) {
+          _game.updateGameState(gameState);
+        });
+      });
+      asyncGame.whenData((gameState) {
         _game.updateGameState(gameState);
       });
-    });
+    }
 
     return Scaffold(
       backgroundColor: Colors.transparent,
