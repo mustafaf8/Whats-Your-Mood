@@ -3,17 +3,17 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flame/game.dart';
 import 'package:whats_your_mood/core/constants/app_colors.dart';
 import '../provider/game_provider.dart';
 import '../models/game_state.dart';
 import '../models/player_status.dart';
-import 'widgets/mood_card_widget.dart';
 import 'widgets/photo_card_widget.dart';
 import 'widgets/player_avatar_widget.dart';
 import 'widgets/drawer_menu.dart';
 import 'package:whats_your_mood/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../data/mock_card_data.dart';
+import '../flame/card_table_game.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key, required this.gameId});
@@ -28,6 +28,19 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   String? selectedPhotoId;
   Timer? _roundTimer;
   int _remainingSeconds = 0;
+  late final CardTableGame _game;
+
+  @override
+  void initState() {
+    super.initState();
+    _game = CardTableGame(widget.gameId);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _game.setRef(ref);
+  }
 
   @override
   void dispose() {
@@ -188,26 +201,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 350),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              child: gameState.isRevealed
-                  ? _buildRevealedArea(gameState)
-                  : Column(
-                      key: const ValueKey('play'),
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        MoodCardWidget(
-                          text: gameState.currentMoodCard?.text ?? 'Mood',
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Bir kart seçin ve oynayın',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
+            child: GameWidget<CardTableGame>(
+              game: _game,
             ),
           ),
         ),
@@ -227,75 +222,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     );
   }
 
-  Widget _buildRevealedArea(GameState gameState) {
-    return Column(
-      key: const ValueKey('reveal'),
-      children: [
-        Align(
-          alignment: Alignment.topCenter,
-          child: AnimatedScale(
-            duration: const Duration(milliseconds: 300),
-            scale: 0.9,
-            child: MoodCardWidget(
-              text: gameState.currentMoodCard?.text ?? 'Mood',
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Expanded(
-          child: SingleChildScrollView(
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 12,
-              runSpacing: 12,
-              children: gameState.playedCardIds.entries.map((e) {
-                final username = gameState.playersUsernames[e.key] ?? e.key;
-                final photoId = e.value;
-                final photo = findPhotoCardById(photoId);
-                if (photo == null) {
-                  return SizedBox(
-                    width: 160,
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Center(child: Text(username)),
-                      ),
-                    ),
-                  );
-                }
-                return SizedBox(
-                  width: 160,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AspectRatio(
-                        aspectRatio: 140 / 180,
-                        child: Hero(
-                          tag: 'photo-${photo.id}',
-                          child: PhotoCardWidget(
-                            photoCard: photo,
-                            onTap: () {},
-                            isSelected: false,
-                            isRevealed: true,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        username,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildMyPlayerArea(PlayerStatus me, GameState gameState) {
     return Column(
