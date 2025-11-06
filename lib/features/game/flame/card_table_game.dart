@@ -17,22 +17,28 @@ class CardTableGame extends FlameGame with HasGameRef, RiverpodGameMixin {
 
   void setRef(WidgetRef ref) {
     _ref = ref;
+    _startListening();
   }
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    
     if (_ref != null) {
-      _ref!.listen(
-        gameStreamProvider(gameId),
-        (previous, next) {
-          next.whenData((gameState) {
-            updateTableFromState(gameState);
-          });
-        },
-      );
+      _startListening();
     }
+  }
+
+  void _startListening() {
+    if (_ref == null) return;
+    
+    _ref!.listen(
+      gameStreamProvider(gameId),
+      (previous, next) {
+        next.whenData((gameState) {
+          updateTableFromState(gameState);
+        });
+      },
+    );
   }
 
   void updateTableFromState(GameState gameState) {

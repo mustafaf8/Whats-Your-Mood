@@ -190,20 +190,20 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             spacing: 12,
             runSpacing: 8,
             children: otherPlayers
-                .map((p) => AnimatedScale(
-                      scale: p.hasPlayed ? 1.05 : 1.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: PlayerAvatarWidget(player: p),
-                    ))
+                .map(
+                  (p) => AnimatedScale(
+                    scale: p.hasPlayed ? 1.05 : 1.0,
+                    duration: const Duration(milliseconds: 300),
+                    child: PlayerAvatarWidget(player: p),
+                  ),
+                )
                 .toList(),
           ),
         ),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: GameWidget<CardTableGame>(
-              game: _game,
-            ),
+            child: GameWidget<CardTableGame>(game: _game),
           ),
         ),
         if (gameState.isRevealed)
@@ -221,7 +221,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       ],
     );
   }
-
 
   Widget _buildMyPlayerArea(PlayerStatus me, GameState gameState) {
     return Column(
@@ -262,17 +261,17 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   child: PhotoCardWidget(
                     photoCard: photoCard,
                     onTap: () {
-                    if (gameState.hasPlayed) return;
-                    final String currentCardId = photoCard.id;
-                    final bool already = selectedPhotoId == currentCardId;
-                    if (already) {
-                      _playCard(currentCardId, gameState.currentRound);
-                    } else {
-                      setState(() => selectedPhotoId = currentCardId);
-                    }
-                  },
-                  isSelected: isSelected,
-                  isRevealed: false,
+                      if (gameState.hasPlayed) return;
+                      final String currentCardId = photoCard.id;
+                      final bool already = selectedPhotoId == currentCardId;
+                      if (already) {
+                        _playCard(currentCardId, gameState.currentRound);
+                      } else {
+                        setState(() => selectedPhotoId = currentCardId);
+                      }
+                    },
+                    isSelected: isSelected,
+                    isRevealed: false,
                   ),
                 ),
               );
@@ -311,8 +310,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       ),
     );
   }
-
-  
 
   void _showGameFinishedDialog(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
