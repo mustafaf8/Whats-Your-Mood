@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../../game/data/game_repository.dart';
 import '../../game/provider/game_provider.dart';
+import '../../game/presentation/widgets/drawer_menu.dart';
 import '../models/lobby_info.dart';
 import 'widgets/lobby_card_widget.dart';
 
@@ -179,6 +180,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('Oyun Lobisi')),
+      drawer: const DrawerMenu(),
       body: Column(
         children: [
           Padding(

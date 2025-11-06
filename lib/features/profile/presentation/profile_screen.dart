@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:whats_your_mood/core/constants/app_colors.dart';
 import 'package:whats_your_mood/l10n/app_localizations.dart';
 import '../provider/profile_provider.dart';
@@ -18,6 +19,10 @@ class ProfileScreen extends ConsumerWidget {
         title: Text(l10n.profile),
         backgroundColor: AppColors.gradientStart,
         foregroundColor: AppColors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: profileAsync.when(
         data: (profile) => SingleChildScrollView(

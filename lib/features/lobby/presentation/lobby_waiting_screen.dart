@@ -25,7 +25,35 @@ class LobbyWaitingScreen extends ConsumerWidget {
         final isHost = userId != null && userId == state.hostId;
         final players = state.playersUsernames;
         return Scaffold(
-          appBar: AppBar(title: Text(state.lobbyName ?? 'Bekleme Odası')),
+          appBar: AppBar(
+            title: Text(state.lobbyName ?? 'Bekleme Odası'),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () async {
+                final bool? shouldLeave = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Lobiden Ayrıl'),
+                    content: const Text('Bu lobiden ayrılmak istediğinize emin misiniz?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('İptal'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Ayrıl'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (shouldLeave == true && context.mounted) {
+                  context.go('/lobby');
+                }
+              },
+            ),
+          ),
           body: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
