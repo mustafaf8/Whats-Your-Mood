@@ -49,7 +49,28 @@ class LobbyWaitingScreen extends ConsumerWidget {
                 );
 
                 if (shouldLeave == true && context.mounted) {
-                  context.go('/lobby');
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user != null) {
+                    try {
+                      await ref.read(gameRepositoryProvider).leaveGame(
+                        gameId: gameId,
+                        userId: user.uid,
+                      );
+                    } catch (e) {
+                      // Hata durumunda da devam et (kullanıcı ayrılmak istiyor)
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Ayrılırken hata: $e'),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      }
+                    }
+                  }
+                  if (context.mounted) {
+                    context.go('/lobby');
+                  }
                 }
               },
             ),

@@ -535,5 +535,8 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
 
 final activeLobbiesProvider = StreamProvider<List<LobbyInfo>>((ref) {
   final repo = ref.watch(gameRepositoryProvider);
-  return repo.watchActiveLobbies();
+  return repo.watchActiveLobbies().map((lobbyList) {
+    // Sadece oyuncu sayısı 0'dan büyük olan lobileri filtrele (hayalet lobileri gizle)
+    return lobbyList.where((lobby) => lobby.playerCount > 0).toList();
+  });
 });

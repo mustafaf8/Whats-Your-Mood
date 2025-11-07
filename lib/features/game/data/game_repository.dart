@@ -10,6 +10,10 @@ class GameRepository {
 
   final FirebaseDatabase _db;
 
+  // onDisconnect hook'larını saklamak için Map
+  // Key: '${gameId}_${userId}', Value: onDisconnect nesneleri (iptal etmek için)
+  final Map<String, List<OnDisconnect>> _onDisconnectHooks = {};
+
   DatabaseReference _gamesRef() => _db.ref('games');
   DatabaseReference _activeLobbiesRef() => _db.ref('activeLobbies');
 
@@ -60,14 +64,18 @@ class GameRepository {
 
     await newGameRef.set(initial);
 
-    // activeLobbies e ekle
+    // activeLobbies e ekle (createdAt zaman damgası ile)
     await _activeLobbiesRef().child(gameId).set({
       'lobbyName': lobbyName,
       'hostUsername': username,
       'playerCount': 1,
       'maxPlayers': 6,
       'hasPassword': password != null,
+      'createdAt': ServerValue.timestamp,
     });
+
+    // Ev sahibi için onDisconnect hook'ları kur
+    _setupOnDisconnectHooks(gameId, hostUserId);
 
     return gameId;
   }
@@ -117,6 +125,62 @@ class GameRepository {
         .child(gameId)
         .child('playerCount')
         .set(ServerValue.increment(1));
+
+    // Oyuncu için onDisconnect hook'ları kur
+    _setupOnDisconnectHooks(gameId, userId);
+  }
+
+  /// onDisconnect hook'larını kurar: bağlantı koptuğunda oyuncuyu siler ve playerCount'u azaltır
+  void _setupOnDisconnectHooks(String gameId, String userId) {
+    final key = '${gameId}_$userId';
+    
+    // Eğer zaten hook'lar varsa önce iptal et
+    _cancelOnDisconnectHooks(gameId, userId);
+
+    final playerRef = _gamesRef().child('$gameId/players/$userId');
+    final playerCountRef = _activeLobbiesRef().child('$gameId/playerCount');
+
+    // Hook 1: Oyuncuyu /games/{gameId}/players/{userId} yolundan sil
+    final playerOnDisconnect = playerRef.onDisconnect();
+    playerOnDisconnect.remove();
+
+    // Hook 2: playerCount'u azalt
+    final playerCountOnDisconnect = playerCountRef.onDisconnect();
+    playerCountOnDisconnect.set(ServerValue.increment(-1));
+
+    // Hook'ları sakla (iptal etmek için)
+    _onDisconnectHooks[key] = [playerOnDisconnect, playerCountOnDisconnect];
+  }
+
+  /// onDisconnect hook'larını iptal eder
+  void _cancelOnDisconnectHooks(String gameId, String userId) {
+    final key = '${gameId}_$userId';
+    final hooks = _onDisconnectHooks[key];
+    
+    if (hooks != null) {
+      for (final hook in hooks) {
+        hook.cancel();
+      }
+      _onDisconnectHooks.remove(key);
+    }
+  }
+
+  /// Kullanıcının lobiden manuel olarak ayrılmasını yönetir
+  Future<void> leaveGame({
+    required String gameId,
+    required String userId,
+  }) async {
+    // onDisconnect hook'larını iptal et (manuel ayrılma durumunda tetiklenmemeleri için)
+    _cancelOnDisconnectHooks(gameId, userId);
+
+    // Oyuncuyu /games/{gameId}/players/{userId} yolundan sil
+    await _gamesRef().child('$gameId/players/$userId').remove();
+
+    // playerCount'u azalt
+    await _activeLobbiesRef()
+        .child(gameId)
+        .child('playerCount')
+        .set(ServerValue.increment(-1));
   }
 
   Stream<Map<String, dynamic>?> watchGame(String gameId) {
@@ -145,9 +209,19 @@ class GameRepository {
   Future<void> setGameStatus(String gameId, String status) async {
     await _gamesRef().child('$gameId/status').set(status);
 
-    // Oyun başladığında activeLobbies e den sil
+    // Oyun başladığında activeLobbies'den sil ve tüm onDisconnect hook'larını iptal et
     if (status == 'playing') {
       await _activeLobbiesRef().child(gameId).remove();
+      
+      // Oyun başladığında tüm oyuncuların onDisconnect hook'larını iptal et
+      // (artık activeLobbies'de değil, oyun başladı)
+      final gameSnapshot = await _gamesRef().child(gameId).child('players').get();
+      if (gameSnapshot.exists && gameSnapshot.value is Map) {
+        final players = Map<String, dynamic>.from(gameSnapshot.value as Map);
+        for (final userId in players.keys) {
+          _cancelOnDisconnectHooks(gameId, userId);
+        }
+      }
     }
   }
 
