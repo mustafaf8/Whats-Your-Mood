@@ -152,44 +152,91 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     _initializeListener();
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFFF5F7FA),
+      extendBodyBehindAppBar: false,
       appBar: AppBar(
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(gradient: AppColors.mainGradient),
+        ),
         title: asyncGame.when(
           data: (game) => Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('${l10n.round} ${game.currentRound}/${game.totalRounds}'),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${l10n.round} ${game.currentRound}/${game.totalRounds}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
               if (game.status == 'playing' &&
                   !game.isRevealed &&
                   _remainingSeconds > 0)
                 Padding(
-                  padding: const EdgeInsets.only(left: 16),
-                  child: Container(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                      horizontal: 16,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       color: _remainingSeconds <= 10
-                          ? Colors.red.shade300
-                          : Colors.orange.shade300,
+                          ? Colors.red.shade400
+                          : Colors.orange.shade400,
                       borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              (_remainingSeconds <= 10
+                                      ? Colors.red
+                                      : Colors.orange)
+                                  .withValues(alpha: 0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      '${(_remainingSeconds / 60).floor()}:${(_remainingSeconds % 60).toString().padLeft(2, '0')}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.timer, size: 18, color: Colors.white),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${(_remainingSeconds / 60).floor()}:${(_remainingSeconds % 60).toString().padLeft(2, '0')}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.white,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
             ],
           ),
-          loading: () => const Text('Yükleniyor...'),
-          error: (_, __) => const Text('Hata'),
+          loading: () => const Text(
+            'Yükleniyor...',
+            style: TextStyle(color: Colors.white),
+          ),
+          error: (_, __) =>
+              const Text('Hata', style: TextStyle(color: Colors.white)),
         ),
-        backgroundColor: AppColors.gradientStart,
+        backgroundColor: Colors.transparent,
         foregroundColor: AppColors.white,
       ),
       drawer: const DrawerMenu(),
@@ -270,17 +317,30 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     return Column(
       children: [
         if (otherPlayers.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Wrap(
               alignment: WrapAlignment.center,
               spacing: 12,
-              runSpacing: 8,
+              runSpacing: 12,
               children: otherPlayers
                   .map(
                     (p) => AnimatedScale(
-                      scale: p.hasPlayed ? 1.05 : 1.0,
+                      scale: p.hasPlayed ? 1.08 : 1.0,
                       duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOutBack,
                       child: PlayerAvatarWidget(player: p),
                     ),
                   )
@@ -288,36 +348,50 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             ),
           ),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                      spreadRadius: 0,
-                    ),
-                  ],
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                  spreadRadius: -4,
                 ),
-                child: GameWidget<CardTableGame>(game: _game),
-              ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: GameWidget<CardTableGame>(game: _game),
             ),
           ),
         ),
         if (gameState.isRevealed)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: _buildHostRevealControls(gameState, l10n, context),
           ),
         SafeArea(
           top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, Colors.grey.shade50],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 15,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
             child: _buildMyPlayerArea(me, gameState),
           ),
         ),
@@ -330,37 +404,98 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       return const SizedBox.shrink();
     }
 
+    final bool canPlay = !gameState.hasPlayed && !gameState.isRevealed;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
             AnimatedScale(
-              scale: me.hasPlayed ? 1.06 : 1.0,
-              duration: const Duration(milliseconds: 250),
+              scale: me.hasPlayed ? 1.08 : 1.0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutBack,
               child: PlayerAvatarWidget(player: me, isMe: true),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  '${gameState.currentRound}/${gameState.totalRounds}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    me.username,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      color: Color(0xFF1A1A1A),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.gradientStart.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${gameState.currentRound}/${gameState.totalRounds}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: AppColors.gradientStart,
+                          ),
+                        ),
+                      ),
+                      if (canPlay) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.touch_app,
+                                size: 14,
+                                color: Colors.orange.shade700,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Kart Seç',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                  color: Colors.orange.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         SizedBox(
-          height: 190,
+          height: 200,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             itemBuilder: (context, index) {
               if (index >= gameState.currentPhotoCards.length) {
                 return const SizedBox.shrink();
@@ -368,34 +503,40 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
               final photoCard = gameState.currentPhotoCards[index];
               final bool isSelected = selectedPhotoId == photoCard.id;
-              final bool canPlay =
-                  !gameState.hasPlayed && !gameState.isRevealed;
 
-              return SizedBox(
-                width: 140,
-                child: Hero(
-                  tag: 'photo-${photoCard.id}',
-                  child: PhotoCardWidget(
-                    photoCard: photoCard,
-                    onTap: canPlay
-                        ? () {
-                            final String currentCardId = photoCard.id;
-                            final bool already =
-                                selectedPhotoId == currentCardId;
-                            if (already) {
-                              _playCard(currentCardId, gameState.currentRound);
-                            } else {
-                              setState(() => selectedPhotoId = currentCardId);
+              return AnimatedScale(
+                scale: isSelected ? 1.1 : 1.0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                child: SizedBox(
+                  width: 150,
+                  child: Hero(
+                    tag: 'photo-${photoCard.id}',
+                    child: PhotoCardWidget(
+                      photoCard: photoCard,
+                      onTap: canPlay
+                          ? () {
+                              final String currentCardId = photoCard.id;
+                              final bool already =
+                                  selectedPhotoId == currentCardId;
+                              if (already) {
+                                _playCard(
+                                  currentCardId,
+                                  gameState.currentRound,
+                                );
+                              } else {
+                                setState(() => selectedPhotoId = currentCardId);
+                              }
                             }
-                          }
-                        : () {},
-                    isSelected: isSelected,
-                    isRevealed: false,
+                          : () {},
+                      isSelected: isSelected,
+                      isRevealed: false,
+                    ),
                   ),
                 ),
               );
             },
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (_, __) => const SizedBox(width: 16),
             itemCount: gameState.currentPhotoCards.length,
           ),
         ),
@@ -413,13 +554,15 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     if (!isHost) return const SizedBox.shrink();
 
-    return ElevatedButton(
+    final isLastRound = gameState.currentRound >= gameState.totalRounds;
+
+    return FilledButton.icon(
       onPressed: () async {
         setState(() {
           selectedPhotoId = null;
         });
 
-        if (gameState.currentRound >= gameState.totalRounds) {
+        if (isLastRound) {
           _showGameFinishedDialog(context);
           return;
         }
@@ -433,22 +576,34 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 content: Text('Tur başlatılırken hata: $e'),
                 backgroundColor: Colors.red,
                 behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             );
           }
         }
       },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.gradientStart,
+      style: FilledButton.styleFrom(
+        backgroundColor: isLastRound
+            ? Colors.green.shade600
+            : AppColors.gradientStart,
         foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 8,
+      ).copyWith(elevation: MaterialStateProperty.all(8)),
+      icon: Icon(
+        isLastRound ? Icons.celebration : Icons.arrow_forward,
+        size: 24,
       ),
-      child: Text(
-        gameState.currentRound < gameState.totalRounds
-            ? l10n.nextRound
-            : l10n.finishGame,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      label: Text(
+        isLastRound ? l10n.finishGame : l10n.nextRound,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -458,35 +613,84 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Text('🎉'),
-            const SizedBox(width: 12),
-            Expanded(child: Text(l10n.gameCompleted)),
-          ],
-        ),
-        content: Text(l10n.gameCompletedDesc),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text(l10n.playAgain),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              context.go('/lobby');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.gradientStart,
-              foregroundColor: Colors.white,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.gradientStart, AppColors.gradientEnd],
             ),
-            child: Text(l10n.homePage),
+            borderRadius: BorderRadius.circular(24),
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🎉', style: TextStyle(fontSize: 64)),
+              const SizedBox(height: 16),
+              Text(
+                l10n.gameCompleted,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                l10n.gameCompletedDesc,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white.withValues(alpha: 0.9),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white, width: 2),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(l10n.playAgain),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        context.go('/lobby');
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.gradientStart,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(l10n.homePage),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

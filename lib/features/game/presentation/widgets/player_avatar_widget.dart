@@ -14,19 +14,24 @@ class PlayerAvatarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: player.hasPlayed ? Colors.green : Colors.grey.shade300,
-          width: 2,
+          color: player.hasPlayed
+              ? Colors.green.shade400
+              : Colors.grey.shade200,
+          width: player.hasPlayed ? 2.5 : 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: player.hasPlayed
+                ? Colors.green.withValues(alpha: 0.2)
+                : Colors.black.withValues(alpha: 0.08),
+            blurRadius: player.hasPlayed ? 12 : 8,
+            offset: const Offset(0, 3),
+            spreadRadius: player.hasPlayed ? 1 : 0,
           ),
         ],
       ),
@@ -35,58 +40,96 @@ class PlayerAvatarWidget extends StatelessWidget {
         children: [
           Stack(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: _getAvatarColor(player.userId),
-                child: Text(
-                  player.username[0].toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      _getAvatarColor(player.userId),
+                      _getAvatarColor(player.userId).withValues(alpha: 0.7),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _getAvatarColor(player.userId)
+                          .withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: CircleAvatar(
+                  radius: 28,
+                  backgroundColor: Colors.transparent,
+                  child: Text(
+                    player.username[0].toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-              if (player.hasPlayed)
-                const Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                    size: 20,
+              Positioned(
+                bottom: -2,
+                right: -2,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                )
-              else
-                const Positioned(
-                  bottom: 0,
-                  right: 0,
                   child: Icon(
-                    Icons.hourglass_empty,
-                    color: Colors.grey,
-                    size: 20,
+                    player.hasPlayed
+                        ? Icons.check_circle
+                        : Icons.hourglass_empty,
+                    color: player.hasPlayed
+                        ? Colors.green.shade600
+                        : Colors.grey.shade400,
+                    size: 18,
                   ),
                 ),
+              ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             player.username,
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: isMe ? FontWeight.bold : FontWeight.normal,
-              color: isMe ? Colors.blue : Colors.black87,
+              fontSize: 13,
+              fontWeight: isMe ? FontWeight.w700 : FontWeight.w600,
+              color: isMe
+                  ? const Color(0xFF1976D2)
+                  : const Color(0xFF1A1A1A),
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           if (player.isHost)
-            Text(
-              'Host',
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.orange.shade700,
-                fontWeight: FontWeight.bold,
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Host',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.orange.shade700,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
         ],
