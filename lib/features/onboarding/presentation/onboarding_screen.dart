@@ -14,7 +14,6 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   late final PageController _pageController;
   int _currentPage = 0;
-
   late List<OnboardingPageData> _pages;
 
   @override
@@ -38,8 +37,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _onNextPressed() {
     if (_currentPage < _pages.length - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOutCubic,
       );
     } else {
       _onStartGame();
@@ -78,43 +77,64 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              const Spacer(),
               Expanded(
-                flex: 3,
                 child: PageView.builder(
                   controller: _pageController,
                   onPageChanged: _onPageChanged,
                   itemCount: _pages.length,
+                  physics: const BouncingScrollPhysics(),
                   itemBuilder: (context, index) {
                     final pageData = _pages[index];
                     return OnboardingPage(
                       emoji: pageData.emoji,
                       title: pageData.title,
                       description: pageData.description,
+                      pageIndex: index,
                     );
                   },
                 ),
               ),
-              // Page Indicators
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  _pages.length,
-                  (index) => _buildPageIndicator(index == _currentPage),
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Button
+              const SizedBox(height: 16),
+              _buildPageIndicators(),
+              const SizedBox(height: 32),
               Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  child: FilledButton(
                     onPressed: _onNextPressed,
-                    child: Text(isLastPage ? l10n.start : l10n.continueBtn),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.white,
+                      foregroundColor: AppColors.accentOrange,
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ).copyWith(
+                      elevation: MaterialStateProperty.all(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          isLastPage ? l10n.start : l10n.continueBtn,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        if (!isLastPage) ...[
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward, size: 20),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -122,16 +142,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildPageIndicator(bool isActive) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      height: 8,
-      width: isActive ? 24 : 8,
-      decoration: BoxDecoration(
-        color: isActive
-            ? AppColors.white
-            : AppColors.white.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(4),
+  Widget _buildPageIndicators() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        _pages.length,
+        (index) => AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          height: 8,
+          width: _currentPage == index ? 32 : 8,
+          decoration: BoxDecoration(
+            color: _currentPage == index
+                ? AppColors.white
+                : AppColors.white.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(4),
+            boxShadow: _currentPage == index
+                ? [
+                    BoxShadow(
+                      color: AppColors.white.withValues(alpha: 0.5),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
+          ),
+        ),
       ),
     );
   }
