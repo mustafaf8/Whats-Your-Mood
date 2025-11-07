@@ -56,7 +56,6 @@ class GameRepository {
           'moodCardId': firstMoodId,
           'playedCards': {},
           'state': 'playing',
-          'roundEndTime': DateTime.now().millisecondsSinceEpoch + 45000,
         },
       },
       'deck': {'moodCards': moodDeck, 'photoCards': photoDeck.skip(5).toList()},
@@ -74,8 +73,8 @@ class GameRepository {
       'createdAt': ServerValue.timestamp,
     });
 
-    // Ev sahibi için onDisconnect hook'ları kur
-    _setupOnDisconnectHooks(gameId, hostUserId);
+    // Ev sahibi için onDisconnect hook'ları kur (isHost: true)
+    _setupOnDisconnectHooks(gameId, hostUserId, isHost: true);
 
     return gameId;
   }
@@ -126,30 +125,49 @@ class GameRepository {
         .child('playerCount')
         .set(ServerValue.increment(1));
 
-    // Oyuncu için onDisconnect hook'ları kur
-    _setupOnDisconnectHooks(gameId, userId);
+    // Oyuncu için onDisconnect hook'ları kur (isHost: false)
+    // Host kontrolü için oyun verisini oku
+    final gameSnapshot = await _gamesRef().child(gameId).child('hostId').get();
+    final hostId = gameSnapshot.value as String?;
+    final isHost = userId == hostId;
+    _setupOnDisconnectHooks(gameId, userId, isHost: isHost);
   }
 
   /// onDisconnect hook'larını kurar: bağlantı koptuğunda oyuncuyu siler ve playerCount'u azaltır
-  void _setupOnDisconnectHooks(String gameId, String userId) {
+  /// Eğer isHost true ise, host ayrıldığında tüm lobiyi siler
+  void _setupOnDisconnectHooks(String gameId, String userId, {required bool isHost}) {
     final key = '${gameId}_$userId';
     
     // Eğer zaten hook'lar varsa önce iptal et
     _cancelOnDisconnectHooks(gameId, userId);
 
-    final playerRef = _gamesRef().child('$gameId/players/$userId');
-    final playerCountRef = _activeLobbiesRef().child('$gameId/playerCount');
+    if (isHost) {
+      // Host ayrıldığında: Tüm lobiyi ve oyunu sil
+      final lobbyRef = _activeLobbiesRef().child(gameId);
+      final gameRef = _gamesRef().child(gameId);
 
-    // Hook 1: Oyuncuyu /games/{gameId}/players/{userId} yolundan sil
-    final playerOnDisconnect = playerRef.onDisconnect();
-    playerOnDisconnect.remove();
+      final lobbyOnDisconnect = lobbyRef.onDisconnect();
+      lobbyOnDisconnect.remove();
 
-    // Hook 2: playerCount'u azalt
-    final playerCountOnDisconnect = playerCountRef.onDisconnect();
-    playerCountOnDisconnect.set(ServerValue.increment(-1));
+      final gameOnDisconnect = gameRef.onDisconnect();
+      gameOnDisconnect.remove();
 
-    // Hook'ları sakla (iptal etmek için)
-    _onDisconnectHooks[key] = [playerOnDisconnect, playerCountOnDisconnect];
+      // Hook'ları sakla (iptal etmek için)
+      _onDisconnectHooks[key] = [lobbyOnDisconnect, gameOnDisconnect];
+    } else {
+      // Normal oyuncu ayrıldığında: Oyuncuyu sil ve playerCount'u azalt
+      final playerRef = _gamesRef().child('$gameId/players/$userId');
+      final playerCountRef = _activeLobbiesRef().child('$gameId/playerCount');
+
+      final playerOnDisconnect = playerRef.onDisconnect();
+      playerOnDisconnect.remove();
+
+      final playerCountOnDisconnect = playerCountRef.onDisconnect();
+      playerCountOnDisconnect.set(ServerValue.increment(-1));
+
+      // Hook'ları sakla (iptal etmek için)
+      _onDisconnectHooks[key] = [playerOnDisconnect, playerCountOnDisconnect];
+    }
   }
 
   /// onDisconnect hook'larını iptal eder
@@ -173,14 +191,31 @@ class GameRepository {
     // onDisconnect hook'larını iptal et (manuel ayrılma durumunda tetiklenmemeleri için)
     _cancelOnDisconnectHooks(gameId, userId);
 
-    // Oyuncuyu /games/{gameId}/players/{userId} yolundan sil
-    await _gamesRef().child('$gameId/players/$userId').remove();
+    // Host kontrolü
+    final gameSnapshot = await _gamesRef().child(gameId).get();
+    if (!gameSnapshot.exists) {
+      return; // Oyun zaten silinmiş
+    }
 
-    // playerCount'u azalt
-    await _activeLobbiesRef()
-        .child(gameId)
-        .child('playerCount')
-        .set(ServerValue.increment(-1));
+    final gameData = gameSnapshot.value;
+    if (gameData is! Map) {
+      return;
+    }
+
+    final hostId = gameData['hostId'] as String?;
+
+    if (userId == hostId) {
+      // Host ayrıldığında: Tüm lobiyi ve oyunu sil
+      await _activeLobbiesRef().child(gameId).remove();
+      await _gamesRef().child(gameId).remove();
+    } else {
+      // Normal oyuncu ayrıldığında: Oyuncuyu sil ve playerCount'u azalt
+      await _gamesRef().child('$gameId/players/$userId').remove();
+      await _activeLobbiesRef()
+          .child(gameId)
+          .child('playerCount')
+          .set(ServerValue.increment(-1));
+    }
   }
 
   Stream<Map<String, dynamic>?> watchGame(String gameId) {
@@ -200,19 +235,92 @@ class GameRepository {
     required String userId,
     required String cardId,
   }) async {
-    final cardRef = _gamesRef().child(
-      '$gameId/rounds/$round/playedCards/$userId',
-    );
-    await cardRef.set({'cardId': cardId, 'votes': 0});
+    final gameRef = _gamesRef().child(gameId);
+    await gameRef.runTransaction((mutable) {
+      if (mutable is! Map) {
+        return Transaction.success(mutable);
+      }
+
+      final map = Map<String, dynamic>.from(mutable);
+
+      // Sıra kontrolü
+      final currentPlayerTurnId = map['currentPlayerTurnId'] as String?;
+      if (currentPlayerTurnId != userId) {
+        throw Exception('Sıra sizde değil');
+      }
+
+      final playerTurnOrder = List<String>.from(
+        (map['playerTurnOrder'] as List?) ?? [],
+      );
+
+      // Kartı oyna
+      final rounds = _asMap(map['rounds']);
+      final roundData = _asMap(rounds['$round']);
+      final playedCards = _asMap(roundData['playedCards']);
+      playedCards[userId] = {'cardId': cardId, 'votes': 0};
+      roundData['playedCards'] = playedCards;
+      rounds['$round'] = roundData;
+      map['rounds'] = rounds;
+
+      // Sıradaki oyuncuyu belirle
+      final currentIndex = playerTurnOrder.indexOf(userId);
+      if (currentIndex == -1) {
+        throw Exception('Oyuncu sırada bulunamadı');
+      }
+
+      final nextIndex = currentIndex + 1;
+
+      if (nextIndex < playerTurnOrder.length) {
+        // Sıradaki oyuncu var
+        final nextPlayerId = playerTurnOrder[nextIndex];
+        map['currentPlayerTurnId'] = nextPlayerId;
+        map['turnEndTime'] = DateTime.now().millisecondsSinceEpoch + 30000; // 30 saniye
+      } else {
+        // Tüm oyuncular oynadı, reveal aşamasına geç
+        map['currentPlayerTurnId'] = null;
+        map['turnEndTime'] = null;
+      }
+
+      return Transaction.success(map);
+    });
   }
 
   Future<void> setGameStatus(String gameId, String status) async {
-    await _gamesRef().child('$gameId/status').set(status);
-
-    // Oyun başladığında activeLobbies'den sil ve tüm onDisconnect hook'larını iptal et
     if (status == 'playing') {
+      // Oyun başlatma: playerTurnOrder oluştur ve ilk sırayı ayarla
+      final gameRef = _gamesRef().child(gameId);
+      await gameRef.runTransaction((mutable) {
+        if (mutable is! Map) {
+          return Transaction.success(mutable);
+        }
+
+        final map = Map<String, dynamic>.from(mutable);
+        final players = _asMap(map['players']);
+
+        // Oyuncu ID'lerini listeye çevir ve karıştır
+        final playerIds = players.keys.toList();
+        playerIds.shuffle(Random());
+
+        // İlk oyuncuyu belirle ve turnEndTime ayarla
+        final firstPlayerId = playerIds.isNotEmpty ? playerIds[0] : null;
+        final turnEndTime = firstPlayerId != null
+            ? DateTime.now().millisecondsSinceEpoch + 30000 // 30 saniye
+            : null;
+
+        // Oyun durumunu güncelle
+        map['status'] = 'playing';
+        map['playerTurnOrder'] = playerIds;
+        if (firstPlayerId != null) {
+          map['currentPlayerTurnId'] = firstPlayerId;
+          map['turnEndTime'] = turnEndTime;
+        }
+
+        return Transaction.success(map);
+      });
+
+      // activeLobbies'den sil
       await _activeLobbiesRef().child(gameId).remove();
-      
+
       // Oyun başladığında tüm oyuncuların onDisconnect hook'larını iptal et
       // (artık activeLobbies'de değil, oyun başladı)
       final gameSnapshot = await _gamesRef().child(gameId).child('players').get();
@@ -222,6 +330,9 @@ class GameRepository {
           _cancelOnDisconnectHooks(gameId, userId);
         }
       }
+    } else {
+      // Diğer status güncellemeleri için normal set
+      await _gamesRef().child('$gameId/status').set(status);
     }
   }
 
@@ -295,12 +406,24 @@ class GameRepository {
         'moodCardId': nextMoodId,
         'playedCards': {},
         'state': 'playing',
-        'roundEndTime': DateTime.now().millisecondsSinceEpoch + 45000,
       };
+
+      // Yeni tur için sırayı baştan başlat
+      final playerIds = players.keys.toList();
+      playerIds.shuffle(Random());
+      final firstPlayerId = playerIds.isNotEmpty ? playerIds[0] : null;
+      final turnEndTime = firstPlayerId != null
+          ? DateTime.now().millisecondsSinceEpoch + 30000 // 30 saniye
+          : null;
 
       // State yaz
       map['currentRound'] = nextRound;
       map['currentMoodCardId'] = nextMoodId;
+      map['playerTurnOrder'] = playerIds;
+      if (firstPlayerId != null) {
+        map['currentPlayerTurnId'] = firstPlayerId;
+        map['turnEndTime'] = turnEndTime;
+      }
       deck['moodCards'] = moodCards;
       deck['photoCards'] = photoCards;
       map['deck'] = deck;

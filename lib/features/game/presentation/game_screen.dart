@@ -45,12 +45,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     super.dispose();
   }
 
-  void _startTimer(DateTime? roundEndTime) {
-    if (_lastRoundEndTime == roundEndTime) return;
-    _lastRoundEndTime = roundEndTime;
+  void _startTimer(DateTime? turnEndTime) {
+    if (_lastRoundEndTime == turnEndTime) return;
+    _lastRoundEndTime = turnEndTime;
 
     _roundTimer?.cancel();
-    if (roundEndTime == null) {
+    if (turnEndTime == null) {
       setState(() => _remainingSeconds = 0);
       return;
     }
@@ -62,7 +62,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       }
 
       final now = DateTime.now();
-      final diff = roundEndTime.difference(now).inSeconds;
+      final diff = turnEndTime.difference(now).inSeconds;
 
       setState(() {
         _remainingSeconds = diff > 0 ? diff : 0;
@@ -82,6 +82,13 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     if (!asyncGame.hasValue) return;
 
     final gameState = asyncGame.value!;
+
+    // Sadece sıra o anki kullanıcıdaysa otomatik kart oyna
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null || userId != gameState.currentPlayerTurnId) {
+      return;
+    }
+
     if (gameState.hasPlayed) return;
 
     final cards = gameState.currentPhotoCards;
@@ -111,11 +118,17 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final errorMessage = e.toString().contains('Sıra sizde değil')
+            ? 'Sıra sizde değil, lütfen bekleyin'
+            : 'Kart oynanırken hata: $e';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Kart oynanırken hata: $e'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -183,6 +196,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               ),
               if (game.status == 'playing' &&
                   !game.isRevealed &&
+                  game.currentPlayerTurnId != null &&
                   _remainingSeconds > 0)
                 Padding(
                   padding: const EdgeInsets.only(left: 12),
@@ -246,7 +260,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              _startTimer(gameState.roundEndTime);
+              _startTimer(gameState.turnEndTime);
             }
           });
 
@@ -341,7 +355,16 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       scale: p.hasPlayed ? 1.08 : 1.0,
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeOutBack,
-                      child: PlayerAvatarWidget(player: p),
+                      child: PlayerAvatarWidget(
+                        player: p,
+                        isCurrentTurn:
+                            p.userId == gameState.currentPlayerTurnId,
+                        remainingSeconds:
+                            p.userId == gameState.currentPlayerTurnId
+                            ? _remainingSeconds
+                            : null,
+                        totalTurnSeconds: 30,
+                      ),
                     ),
                   )
                   .toList(),
@@ -404,6 +427,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       return const SizedBox.shrink();
     }
 
+    final userId = FirebaseAuth.instance.currentUser?.uid;
     final bool canPlay = !gameState.hasPlayed && !gameState.isRevealed;
 
     return Column(
@@ -415,7 +439,15 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               scale: me.hasPlayed ? 1.08 : 1.0,
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOutBack,
-              child: PlayerAvatarWidget(player: me, isMe: true),
+              child: PlayerAvatarWidget(
+                player: me,
+                isMe: true,
+                isCurrentTurn: me.userId == gameState.currentPlayerTurnId,
+                remainingSeconds: me.userId == gameState.currentPlayerTurnId
+                    ? _remainingSeconds
+                    : null,
+                totalTurnSeconds: 30,
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -451,7 +483,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                           ),
                         ),
                       ),
-                      if (canPlay) ...[
+                      if (canPlay &&
+                          me.userId == gameState.currentPlayerTurnId) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -472,11 +505,44 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'Kart Seç',
+                                'Sıra Sizde',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 12,
                                   color: Colors.orange.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else if (gameState.currentPlayerTurnId != null &&
+                          me.userId != gameState.currentPlayerTurnId &&
+                          !gameState.isRevealed) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.hourglass_empty,
+                                size: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Sıra Bekleniyor',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
                                 ),
                               ),
                             ],
@@ -503,6 +569,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
               final photoCard = gameState.currentPhotoCards[index];
               final bool isSelected = selectedPhotoId == photoCard.id;
+              final bool isMyTurn = userId == gameState.currentPlayerTurnId;
+              final bool canPlayCard =
+                  canPlay && isMyTurn && !gameState.isRevealed;
 
               return AnimatedScale(
                 scale: isSelected ? 1.1 : 1.0,
@@ -514,7 +583,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     tag: 'photo-${photoCard.id}',
                     child: PhotoCardWidget(
                       photoCard: photoCard,
-                      onTap: canPlay
+                      onTap: canPlayCard
                           ? () {
                               final String currentCardId = photoCard.id;
                               final bool already =
