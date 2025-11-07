@@ -16,6 +16,43 @@ class LobbyWaitingScreen extends ConsumerWidget {
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(body: Center(child: Text('Hata: $e'))),
       data: (state) {
+        // Host ayrıldıysa (oyun verisi null veya hostId null) kullanıcıyı bilgilendir
+        if (state.hostId == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => AlertDialog(
+                  title: const Text('Lobi Dağıtıldı'),
+                  content: const Text('Ev sahibi lobiden ayrıldı. Ana sayfaya yönlendiriliyorsunuz...'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        context.go('/lobby');
+                      },
+                      child: const Text('Tamam'),
+                    ),
+                  ],
+                ),
+              );
+            }
+          });
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  const Text('Lobi dağıtılıyor...'),
+                ],
+              ),
+            ),
+          );
+        }
+
         if (state.status == 'playing') {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) context.go('/game/$gameId');

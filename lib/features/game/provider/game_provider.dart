@@ -17,11 +17,13 @@ final gameStreamProvider = StreamProvider.family<GameState, String>((
 ) {
   final repo = ref.watch(gameRepositoryProvider);
   return repo.watchGame(gameId).map((json) {
+    // Oyun verisi null ise (host ayrıldı, oyun silindi), hostId null olan bir GameState döndür
     if (json == null) {
       return const GameState(
         allMoodCards: [],
         allPhotoCards: [],
         currentPhotoCards: [],
+        hostId: null, // Host ayrıldığında null
       );
     }
     Map<String, dynamic> _asMap(dynamic value) {
@@ -57,7 +59,17 @@ final gameStreamProvider = StreamProvider.family<GameState, String>((
         .whereType<PhotoCard>()
         .toList();
 
-    final isRevealed = players.isNotEmpty && played.length >= players.length;
+    // playerTurnOrder ve currentPlayerTurnId işle (isRevealed hesaplaması için önce)
+    final playerTurnOrderRaw = json['playerTurnOrder'];
+    final List<String> playerTurnOrder = playerTurnOrderRaw is List
+        ? List<String>.from(playerTurnOrderRaw.map((e) => e.toString()))
+        : <String>[];
+    
+    final currentPlayerTurnId = json['currentPlayerTurnId'] as String?;
+
+    // Reveal: Tüm oyuncular oynadı (currentPlayerTurnId null ise) veya tüm oyuncular kart oynadı
+    final isRevealed = currentPlayerTurnId == null || 
+        (players.isNotEmpty && played.length >= players.length);
 
     final Map<String, String> playersUsernames = {
       for (final entry in players.entries)
@@ -73,10 +85,10 @@ final gameStreamProvider = StreamProvider.family<GameState, String>((
 
     final hasPlayed = userId != null && played.containsKey(userId);
 
-    // roundEndTime işle
-    final roundEndTimeMs = (roundData['roundEndTime'] as num?);
-    final roundEndTime = roundEndTimeMs != null
-        ? DateTime.fromMillisecondsSinceEpoch(roundEndTimeMs.toInt())
+    // turnEndTime işle (roundEndTime yerine)
+    final turnEndTimeMs = (json['turnEndTime'] as num?);
+    final turnEndTime = turnEndTimeMs != null
+        ? DateTime.fromMillisecondsSinceEpoch(turnEndTimeMs.toInt())
         : null;
 
     // PlayerStatus listesi oluştur
@@ -108,7 +120,9 @@ final gameStreamProvider = StreamProvider.family<GameState, String>((
       lobbyName: json['lobbyName'] as String?,
       playersUsernames: playersUsernames,
       playedCardIds: playedCardIds,
-      roundEndTime: roundEndTime,
+      playerTurnOrder: playerTurnOrder,
+      currentPlayerTurnId: currentPlayerTurnId,
+      turnEndTime: turnEndTime,
       players: playersList,
     );
   });

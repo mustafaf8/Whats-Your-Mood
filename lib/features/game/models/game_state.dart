@@ -16,7 +16,9 @@ class GameState {
   final String? lobbyName;
   final Map<String, String> playersUsernames; // userId -> username
   final Map<String, String> playedCardIds; // userId -> photoCardId
-  final DateTime? roundEndTime;
+  final List<String> playerTurnOrder; // Oyun başladığında belirlenen oyuncu sırası
+  final String? currentPlayerTurnId; // Sırası gelen oyuncunun ID'si
+  final DateTime? turnEndTime; // Sırası gelen oyuncunun hamlesi için son tarih/saat
   final List<PlayerStatus> players;
 
   const GameState({
@@ -33,7 +35,9 @@ class GameState {
     this.lobbyName,
     this.playersUsernames = const {},
     this.playedCardIds = const {},
-    this.roundEndTime,
+    this.playerTurnOrder = const [],
+    this.currentPlayerTurnId,
+    this.turnEndTime,
     this.players = const [],
   });
 
@@ -51,7 +55,9 @@ class GameState {
     String? lobbyName,
     Map<String, String>? playersUsernames,
     Map<String, String>? playedCardIds,
-    DateTime? Function()? roundEndTime,
+    List<String>? playerTurnOrder,
+    String? Function()? currentPlayerTurnId,
+    DateTime? Function()? turnEndTime,
     List<PlayerStatus>? players,
   }) {
     return GameState(
@@ -70,7 +76,11 @@ class GameState {
       lobbyName: lobbyName ?? this.lobbyName,
       playersUsernames: playersUsernames ?? this.playersUsernames,
       playedCardIds: playedCardIds ?? this.playedCardIds,
-      roundEndTime: roundEndTime != null ? roundEndTime() : this.roundEndTime,
+      playerTurnOrder: playerTurnOrder ?? this.playerTurnOrder,
+      currentPlayerTurnId: currentPlayerTurnId != null
+          ? currentPlayerTurnId()
+          : this.currentPlayerTurnId,
+      turnEndTime: turnEndTime != null ? turnEndTime() : this.turnEndTime,
       players: players ?? this.players,
     );
   }

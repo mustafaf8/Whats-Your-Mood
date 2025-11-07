@@ -4,11 +4,17 @@ import '../../models/player_status.dart';
 class PlayerAvatarWidget extends StatelessWidget {
   final PlayerStatus player;
   final bool isMe;
+  final bool isCurrentTurn;
+  final int? remainingSeconds;
+  final int? totalTurnSeconds;
 
   const PlayerAvatarWidget({
     super.key,
     required this.player,
     this.isMe = false,
+    this.isCurrentTurn = false,
+    this.remainingSeconds,
+    this.totalTurnSeconds,
   });
 
   @override
@@ -39,7 +45,27 @@ class PlayerAvatarWidget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Stack(
+            alignment: Alignment.center,
             children: [
+              // Timer progress indicator (sıra oyuncudaysa)
+              if (isCurrentTurn &&
+                  remainingSeconds != null &&
+                  totalTurnSeconds != null &&
+                  totalTurnSeconds! > 0)
+                SizedBox(
+                  width: 64,
+                  height: 64,
+                  child: CircularProgressIndicator(
+                    value: remainingSeconds! / totalTurnSeconds!,
+                    strokeWidth: 4,
+                    backgroundColor: Colors.grey.shade200,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      remainingSeconds! <= 10
+                          ? Colors.red.shade400
+                          : Colors.green.shade400,
+                    ),
+                  ),
+                ),
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
@@ -59,6 +85,12 @@ class PlayerAvatarWidget extends StatelessWidget {
                       offset: const Offset(0, 2),
                     ),
                   ],
+                  border: isCurrentTurn
+                      ? Border.all(
+                          color: Colors.orange.shade400,
+                          width: 3,
+                        )
+                      : null,
                 ),
                 child: CircleAvatar(
                   radius: 28,
@@ -100,6 +132,31 @@ class PlayerAvatarWidget extends StatelessWidget {
                   ),
                 ),
               ),
+              // Sıra göstergesi
+              if (isCurrentTurn)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade400,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.orange.withValues(alpha: 0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 8),
