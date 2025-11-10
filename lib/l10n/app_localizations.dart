@@ -390,6 +390,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get retry;
+
+  /// No description provided for @drawerTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s your mood today?'**
+  String get drawerTagline;
+
+  /// No description provided for @info.
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get info;
+
+  /// No description provided for @profileTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Track your mood journey.'**
+  String get profileTagline;
+
+  /// No description provided for @profileEditAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get profileEditAction;
+
+  /// No description provided for @profileShareAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Share profile'**
+  String get profileShareAction;
+
+  /// No description provided for @profileLogMoodAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Log mood'**
+  String get profileLogMoodAction;
+
+  /// No description provided for @profileMoodSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How are you feeling?'**
+  String get profileMoodSheetTitle;
+
+  /// No description provided for @profileMoodSheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose one to update your timeline.'**
+  String get profileMoodSheetSubtitle;
+
+  /// No description provided for @profileMoodHappy.
+  ///
+  /// In en, this message translates to:
+  /// **'Happy'**
+  String get profileMoodHappy;
+
+  /// No description provided for @profileMoodExcited.
+  ///
+  /// In en, this message translates to:
+  /// **'Excited'**
+  String get profileMoodExcited;
+
+  /// No description provided for @profileMoodRelaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'Relaxed'**
+  String get profileMoodRelaxed;
+
+  /// No description provided for @profileMoodCurious.
+  ///
+  /// In en, this message translates to:
+  /// **'Curious'**
+  String get profileMoodCurious;
+
+  /// No description provided for @profileMoodUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Mood updated!'**
+  String get profileMoodUpdated;
+
+  /// No description provided for @profileBioTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About you'**
+  String get profileBioTitle;
+
+  /// No description provided for @profileBioEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell others a bit about yourself.'**
+  String get profileBioEmpty;
+
+  /// No description provided for @profileLastMoodUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Last mood update'**
+  String get profileLastMoodUpdate;
+
+  /// No description provided for @currentStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Current streak'**
+  String get currentStreak;
+
+  /// No description provided for @longestStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest streak'**
+  String get longestStreak;
+
+  /// No description provided for @level.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get level;
+
+  /// No description provided for @completionRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Completion rate'**
+  String get completionRate;
+
+  /// No description provided for @achievements.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievements'**
+  String get achievements;
+
+  /// No description provided for @recentMoods.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent moods'**
+  String get recentMoods;
+
+  /// No description provided for @noRecentMoods.
+  ///
+  /// In en, this message translates to:
+  /// **'No moods logged yet.'**
+  String get noRecentMoods;
+
+  /// No description provided for @noAchievements.
+  ///
+  /// In en, this message translates to:
+  /// **'No achievements unlocked yet.'**
+  String get noAchievements;
+
+  /// No description provided for @profileUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated!'**
+  String get profileUpdated;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

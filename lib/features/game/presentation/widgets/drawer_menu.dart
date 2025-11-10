@@ -26,10 +26,7 @@ class DrawerMenu extends ConsumerWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.primary,
-                    colorScheme.tertiary,
-                  ],
+                  colors: [colorScheme.primary, colorScheme.tertiary],
                 ),
                 borderRadius: const BorderRadius.only(
                   topRight: Radius.circular(24),
@@ -61,7 +58,7 @@ class DrawerMenu extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'What’s your mood today?',
+                          l10n.drawerTagline,
                           style: TextStyle(
                             color: colorScheme.onPrimary.withOpacity(0.9),
                           ),
@@ -167,7 +164,7 @@ class DrawerMenu extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: Text(
-                'Info',
+                l10n.info,
                 style: Theme.of(context).textTheme.labelSmall,
               ),
             ),

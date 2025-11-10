@@ -156,4 +156,85 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get retry => 'Reintentar';
+
+  @override
+  String get drawerTagline => '¿Cómo está tu ánimo hoy?';
+
+  @override
+  String get info => 'Información';
+
+  @override
+  String get profileTagline => 'Personaliza tu viaje de ánimo.';
+
+  @override
+  String get profileEditAction => 'Editar perfil';
+
+  @override
+  String get profileShareAction => 'Compartir perfil';
+
+  @override
+  String get profileLogMoodAction => 'Registrar ánimo';
+
+  @override
+  String get profileMoodSheetTitle => '¿Cómo te sientes?';
+
+  @override
+  String get profileMoodSheetSubtitle => 'Elige uno para actualizar tu cronología.';
+
+  @override
+  String get profileMoodHappy => 'Feliz';
+
+  @override
+  String get profileMoodExcited => 'Emocionado';
+
+  @override
+  String get profileMoodRelaxed => 'Relajado';
+
+  @override
+  String get profileMoodCurious => 'Curioso';
+
+  @override
+  String get profileMoodUpdated => '¡Ánimo actualizado!';
+
+  @override
+  String get profileBioTitle => 'Sobre ti';
+
+  @override
+  String get profileBioEmpty => 'Cuéntales un poco sobre ti.';
+
+  @override
+  String get profileLastMoodUpdate => 'Última actualización de ánimo';
+
+  @override
+  String get currentStreak => 'Racha actual';
+
+  @override
+  String get longestStreak => 'Racha más larga';
+
+  @override
+  String get level => 'Nivel';
+
+  @override
+  String get completionRate => 'Tasa de finalización';
+
+  @override
+  String get achievements => 'Logros';
+
+  @override
+  String get recentMoods => 'Ánimos recientes';
+
+  @override
+  String get noRecentMoods => 'Aún no hay ánimos registrados.';
+
+  @override
+  String get noAchievements => 'Todavía no hay logros.';
+
+  @override
+  String get profileUpdated => '¡Perfil actualizado!';
+
+  @override
+  String get save => 'Guardar';
+
+  @override
+  String get cancel => 'Cancelar';
 }
