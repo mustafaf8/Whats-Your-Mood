@@ -156,4 +156,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get retry => 'Retry';
+
+  @override
+  String get drawerTagline => 'What\'s your mood today?';
+
+  @override
+  String get info => 'Info';
+
+  @override
+  String get profileTagline => 'Track your mood journey.';
+
+  @override
+  String get profileEditAction => 'Edit profile';
+
+  @override
+  String get profileShareAction => 'Share profile';
+
+  @override
+  String get profileLogMoodAction => 'Log mood';
+
+  @override
+  String get profileMoodSheetTitle => 'How are you feeling?';
+
+  @override
+  String get profileMoodSheetSubtitle => 'Choose one to update your timeline.';
+
+  @override
+  String get profileMoodHappy => 'Happy';
+
+  @override
+  String get profileMoodExcited => 'Excited';
+
+  @override
+  String get profileMoodRelaxed => 'Relaxed';
+
+  @override
+  String get profileMoodCurious => 'Curious';
+
+  @override
+  String get profileMoodUpdated => 'Mood updated!';
+
+  @override
+  String get profileBioTitle => 'About you';
+
+  @override
+  String get profileBioEmpty => 'Tell others a bit about yourself.';
+
+  @override
+  String get profileLastMoodUpdate => 'Last mood update';
+
+  @override
+  String get currentStreak => 'Current streak';
+
+  @override
+  String get longestStreak => 'Longest streak';
+
+  @override
+  String get level => 'Level';
+
+  @override
+  String get completionRate => 'Completion rate';
+
+  @override
+  String get achievements => 'Achievements';
+
+  @override
+  String get recentMoods => 'Recent moods';
+
+  @override
+  String get noRecentMoods => 'No moods logged yet.';
+
+  @override
+  String get noAchievements => 'No achievements unlocked yet.';
+
+  @override
+  String get profileUpdated => 'Profile updated!';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get cancel => 'Cancel';
 }

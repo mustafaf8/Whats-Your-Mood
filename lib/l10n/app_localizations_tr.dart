@@ -156,4 +156,85 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get retry => 'Tekrar Dene';
+
+  @override
+  String get drawerTagline => 'Bugün modun nasıl?';
+
+  @override
+  String get info => 'Bilgi';
+
+  @override
+  String get profileTagline => 'Mod yolculuğunu kişiselleştir.';
+
+  @override
+  String get profileEditAction => 'Profili düzenle';
+
+  @override
+  String get profileShareAction => 'Profili paylaş';
+
+  @override
+  String get profileLogMoodAction => 'Mod kaydet';
+
+  @override
+  String get profileMoodSheetTitle => 'Bugün modun nasıl?';
+
+  @override
+  String get profileMoodSheetSubtitle => 'Zaman çizelgeni güncellemek için birini seç.';
+
+  @override
+  String get profileMoodHappy => 'Mutlu';
+
+  @override
+  String get profileMoodExcited => 'Heyecanlı';
+
+  @override
+  String get profileMoodRelaxed => 'Rahat';
+
+  @override
+  String get profileMoodCurious => 'Meraklı';
+
+  @override
+  String get profileMoodUpdated => 'Mod güncellendi!';
+
+  @override
+  String get profileBioTitle => 'Hakkında';
+
+  @override
+  String get profileBioEmpty => 'Kendinden biraz bahset.';
+
+  @override
+  String get profileLastMoodUpdate => 'Son mod güncellemesi';
+
+  @override
+  String get currentStreak => 'Güncel seri';
+
+  @override
+  String get longestStreak => 'En uzun seri';
+
+  @override
+  String get level => 'Seviye';
+
+  @override
+  String get completionRate => 'Tamamlanma oranı';
+
+  @override
+  String get achievements => 'Başarılar';
+
+  @override
+  String get recentMoods => 'Son modlar';
+
+  @override
+  String get noRecentMoods => 'Henüz mod kaydı yok.';
+
+  @override
+  String get noAchievements => 'Henüz başarı yok.';
+
+  @override
+  String get profileUpdated => 'Profil güncellendi!';
+
+  @override
+  String get save => 'Kaydet';
+
+  @override
+  String get cancel => 'Vazgeç';
 }
