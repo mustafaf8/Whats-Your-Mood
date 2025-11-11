@@ -14,6 +14,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../flame/card_table_game.dart';
 import 'widgets/other_players_bar.dart';
 import 'widgets/my_player_area.dart';
+import 'widgets/game_appbar_title.dart';
+import 'widgets/game_board_container.dart';
+import 'widgets/host_reveal_button.dart';
+import 'widgets/game_finished_dialog.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key, required this.gameId});
@@ -173,75 +177,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           decoration: BoxDecoration(gradient: AppColors.mainGradient),
         ),
         title: asyncGame.when(
-          data: (game) => Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${l10n.round} ${game.currentRound}/${game.totalRounds}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              if (game.status == 'playing' &&
-                  !game.isRevealed &&
-                  game.currentPlayerTurnId != null &&
-                  _remainingSeconds > 0)
-                Padding(
-                  padding: const EdgeInsets.only(left: 12),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _remainingSeconds <= 10
-                          ? Colors.red.shade400
-                          : Colors.orange.shade400,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color:
-                              (_remainingSeconds <= 10
-                                      ? Colors.red
-                                      : Colors.orange)
-                                  .withValues(alpha: 0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.timer, size: 18, color: Colors.white),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${(_remainingSeconds / 60).floor()}:${(_remainingSeconds % 60).toString().padLeft(2, '0')}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
+          data: (game) => GameAppBarTitle(
+            roundText: '${l10n.round} ${game.currentRound}/${game.totalRounds}',
+            showTimer:
+                game.status == 'playing' &&
+                !game.isRevealed &&
+                game.currentPlayerTurnId != null &&
+                _remainingSeconds > 0,
+            remainingSeconds: _remainingSeconds,
           ),
           loading: () => const Text(
             'Yükleniyor...',
@@ -337,30 +280,48 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             remainingSeconds: _remainingSeconds,
           ),
         Expanded(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                  spreadRadius: -4,
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: GameWidget<CardTableGame>(game: _game),
+          child: GameBoardContainer(
+            child: GameWidget<CardTableGame>(game: _game),
+            bottomOverlay: HostRevealButton(
+              isHost:
+                  FirebaseAuth.instance.currentUser?.uid == gameState.hostId,
+              isRevealed: gameState.isRevealed,
+              isLastRound: gameState.currentRound >= gameState.totalRounds,
+              onNextRound: () async {
+                setState(() => selectedPhotoId = null);
+                try {
+                  await ref
+                      .read(gameRepositoryProvider)
+                      .hostNextRound(widget.gameId);
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Tur başlatılırken hata: $e'),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    );
+                  }
+                }
+              },
+              onFinish: () {
+                setState(() => selectedPhotoId = null);
+                showGameFinishedDialog(
+                  context,
+                  l10n,
+                  onHome: () {
+                    Navigator.of(context).pop();
+                    context.go('/lobby');
+                  },
+                );
+              },
             ),
           ),
         ),
-        if (gameState.isRevealed)
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: _buildHostRevealControls(gameState, l10n, context),
-          ),
         SafeArea(
           top: false,
           child: Container(
@@ -399,154 +360,5 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     );
   }
 
-  Widget _buildHostRevealControls(
-    GameState gameState,
-    AppLocalizations l10n,
-    BuildContext context,
-  ) {
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-    final isHost = currentUserId != null && currentUserId == gameState.hostId;
-
-    if (!isHost) return const SizedBox.shrink();
-
-    final isLastRound = gameState.currentRound >= gameState.totalRounds;
-
-    return FilledButton.icon(
-      onPressed: () async {
-        setState(() {
-          selectedPhotoId = null;
-        });
-
-        if (isLastRound) {
-          _showGameFinishedDialog(context);
-          return;
-        }
-
-        try {
-          await ref.read(gameRepositoryProvider).hostNextRound(widget.gameId);
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Tur başlatılırken hata: $e'),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            );
-          }
-        }
-      },
-      style: FilledButton.styleFrom(
-        backgroundColor: isLastRound
-            ? Colors.green.shade600
-            : AppColors.gradientStart,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 8,
-      ).copyWith(elevation: MaterialStateProperty.all(8)),
-      icon: Icon(
-        isLastRound ? Icons.celebration : Icons.arrow_forward,
-        size: 24,
-      ),
-      label: Text(
-        isLastRound ? l10n.finishGame : l10n.nextRound,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
-  void _showGameFinishedDialog(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.7),
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.gradientStart, AppColors.gradientEnd],
-            ),
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('🎉', style: TextStyle(fontSize: 64)),
-              const SizedBox(height: 16),
-              Text(
-                l10n.gameCompleted,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                l10n.gameCompletedDesc,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white.withValues(alpha: 0.9),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white, width: 2),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(l10n.playAgain),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        context.go('/lobby');
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.gradientStart,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(l10n.homePage),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // dialog ve host butonu ayrı widget dosyalarına taşındı
 }
