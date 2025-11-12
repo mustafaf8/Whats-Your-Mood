@@ -48,6 +48,7 @@ class DefaultFirebaseOptions {
     authDomain: 'whats-ym.firebaseapp.com',
     storageBucket: 'whats-ym.firebasestorage.app',
     measurementId: 'G-3265M0KG7D',
+    databaseURL: 'https://whats-ym-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -56,6 +57,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '564821188747',
     projectId: 'whats-ym',
     storageBucket: 'whats-ym.firebasestorage.app',
+    databaseURL: 'https://whats-ym-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -65,6 +67,7 @@ class DefaultFirebaseOptions {
     projectId: 'whats-ym',
     storageBucket: 'whats-ym.firebasestorage.app',
     iosBundleId: 'com.example.whatsYourMood',
+    databaseURL: 'https://whats-ym-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -74,6 +77,7 @@ class DefaultFirebaseOptions {
     projectId: 'whats-ym',
     storageBucket: 'whats-ym.firebasestorage.app',
     iosBundleId: 'com.example.whatsYourMood',
+    databaseURL: 'https://whats-ym-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
@@ -84,5 +88,6 @@ class DefaultFirebaseOptions {
     authDomain: 'whats-ym.firebaseapp.com',
     storageBucket: 'whats-ym.firebasestorage.app',
     measurementId: 'G-MH6NJS8M3K',
+    databaseURL: 'https://whats-ym-default-rtdb.firebaseio.com',
   );
 }

@@ -1,6 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:whats_your_mood/core/constants/app_colors.dart';
 import '../../models/player_status.dart';
 import '../../models/game_state.dart';
 import 'photo_card_widget.dart';
@@ -30,27 +28,63 @@ class MyPlayerArea extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final theme = Theme.of(context);
+    final bool isMyTurn = me.userId == gameState.currentPlayerTurnId;
     final bool canPlay = !gameState.hasPlayed && !gameState.isRevealed;
+    final bool canPlayCard = canPlay && isMyTurn;
+
+    final Widget statusChip;
+    if (canPlayCard) {
+      statusChip = _StatusChip(
+        label: 'Sıra sizde',
+        icon: Icons.touch_app_outlined,
+        color: theme.colorScheme.primary,
+        background: theme.colorScheme.primaryContainer,
+      );
+    } else if (gameState.currentPlayerTurnId != null &&
+        !isMyTurn &&
+        !gameState.isRevealed) {
+      statusChip = _StatusChip(
+        label: 'Beklemede',
+        icon: Icons.hourglass_bottom,
+        color: theme.colorScheme.outline,
+        background: theme.colorScheme.surfaceVariant,
+      );
+    } else {
+      statusChip = const SizedBox.shrink();
+    }
+
+    final List<_StatusChip> infoPills = [
+      _StatusChip(
+        label: '${gameState.currentRound}/${gameState.totalRounds}',
+        icon: Icons.flag_outlined,
+        color: theme.colorScheme.secondary,
+        background: theme.colorScheme.secondaryContainer,
+      ),
+      if (statusChip is! SizedBox) statusChip as _StatusChip,
+    ];
+
+    void handleCardTap(String cardId, bool isSelected) {
+      if (!canPlayCard) return;
+      if (isSelected) {
+        onPlay(cardId);
+      } else {
+        onSelect(cardId);
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            AnimatedScale(
-              scale: me.hasPlayed ? 1.08 : 1.0,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutBack,
-              child: PlayerAvatarWidget(
-                player: me,
-                isMe: true,
-                isCurrentTurn: me.userId == gameState.currentPlayerTurnId,
-                remainingSeconds: me.userId == gameState.currentPlayerTurnId
-                    ? remainingSeconds
-                    : null,
-                totalTurnSeconds: 30,
-              ),
+            PlayerAvatarWidget(
+              player: me,
+              isMe: true,
+              isCurrentTurn: isMyTurn,
+              remainingSeconds: isMyTurn ? remainingSeconds : null,
+              totalTurnSeconds: 30,
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -59,158 +93,124 @@ class MyPlayerArea extends StatelessWidget {
                 children: [
                   Text(
                     me.username,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                      color: Color(0xFF1A1A1A),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.gradientStart.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '${gameState.currentRound}/${gameState.totalRounds}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: AppColors.gradientStart,
-                          ),
-                        ),
-                      ),
-                      if (canPlay &&
-                          me.userId == gameState.currentPlayerTurnId) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.touch_app,
-                                size: 14,
-                                color: Colors.orange.shade700,
-                              ),
-                              const SizedBox(width: 4),
-                              const Text(
-                                'Sıra Sizde',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                  color: Color(0xFFEF6C00),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ] else if (gameState.currentPlayerTurnId != null &&
-                          me.userId != gameState.currentPlayerTurnId &&
-                          !gameState.isRevealed) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.hourglass_empty,
-                                size: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Sıra Bekleniyor',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 8, runSpacing: 8, children: infoPills),
                 ],
               ),
             ),
+            if (canPlayCard)
+              FilledButton.icon(
+                onPressed: selectedPhotoId == null
+                    ? null
+                    : () => onPlay(selectedPhotoId!),
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: const Text('Oyna'),
+              ),
           ],
         ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 200,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            itemBuilder: (context, index) {
-              if (index >= gameState.currentPhotoCards.length) {
-                return const SizedBox.shrink();
-              }
+        const SizedBox(height: 20),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          child: SizedBox(
+            height: 186,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              itemCount: gameState.currentPhotoCards.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 16),
+              itemBuilder: (context, index) {
+                if (index >= gameState.currentPhotoCards.length) {
+                  return const SizedBox.shrink();
+                }
+                final photoCard = gameState.currentPhotoCards[index];
+                final bool isSelected = selectedPhotoId == photoCard.id;
+                final bool isDisabled = !canPlayCard;
 
-              final photoCard = gameState.currentPhotoCards[index];
-              final bool isSelected = selectedPhotoId == photoCard.id;
-              final bool isMyTurn = userId == gameState.currentPlayerTurnId;
-              final bool canPlayCard =
-                  canPlay && isMyTurn && !gameState.isRevealed;
-
-              return AnimatedScale(
-                scale: isSelected ? 1.1 : 1.0,
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                child: SizedBox(
-                  width: 150,
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  width: 152,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    border: isSelected
+                        ? Border.all(width: 2, color: theme.colorScheme.primary)
+                        : null,
+                  ),
                   child: Hero(
                     tag: 'photo-${photoCard.id}',
-                    child: PhotoCardWidget(
-                      photoCard: photoCard,
-                      onTap: canPlayCard
-                          ? () {
-                              final String currentCardId = photoCard.id;
-                              final bool already =
-                                  selectedPhotoId == currentCardId;
-                              if (already) {
-                                onPlay(currentCardId);
-                              } else {
-                                onSelect(currentCardId);
-                              }
-                            }
-                          : () {},
-                      isSelected: isSelected,
-                      isRevealed: false,
+                    child: Opacity(
+                      opacity: isDisabled ? 0.55 : 1,
+                      child: PhotoCardWidget(
+                        photoCard: photoCard,
+                        onTap: () => handleCardTap(photoCard.id, isSelected),
+                        isSelected: isSelected,
+                        isRevealed: false,
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
-            separatorBuilder: (_, __) => const SizedBox(width: 16),
-            itemCount: gameState.currentPhotoCards.length,
+                );
+              },
+            ),
           ),
         ),
+        if (canPlayCard)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text(
+              selectedPhotoId == null
+                  ? 'Kart seçerek oynayın.'
+                  : 'Seçili kartı oynamak için tekrar dokunun veya "Oyna"ya basın.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
+          ),
       ],
     );
   }
 }
 
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.background,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

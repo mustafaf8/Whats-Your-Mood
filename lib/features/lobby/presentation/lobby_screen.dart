@@ -141,11 +141,15 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
     setState(() => _isLoading = true);
     
     try {
+      print('[LobbyScreen] Anonim giriş başlatılıyor...');
+      await GameRepository.ensureAnonymousSignIn();
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         throw Exception('Kullanıcı girişi yapılmamış');
       }
+      print('[LobbyScreen] Kullanıcı ID: ${user.uid}');
 
+      print('[LobbyScreen] Lobi oluşturuluyor: $lobbyName');
       final id = await _repo.createGame(
         hostUserId: user.uid,
         username: _usernameController.text.trim().isEmpty 
@@ -154,17 +158,31 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
         lobbyName: lobbyName,
         password: password,
       );
+      print('[LobbyScreen] Lobi oluşturuldu, ID: $id');
       
       if (!mounted) return;
       context.go('/lobby/$id');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[LobbyScreen] HATA: $e');
+      print('[LobbyScreen] StackTrace: $stackTrace');
       if (!mounted) return;
+      
+      String errorMessage = 'Lobi oluşturulamadı';
+      if (e.toString().contains('zaman aşımı') || e.toString().contains('timeout')) {
+        errorMessage = 'Firebase bağlantı hatası. Lütfen internet bağlantınızı ve Firebase kurallarını kontrol edin.';
+      } else if (e.toString().contains('permission') || e.toString().contains('PERMISSION_DENIED')) {
+        errorMessage = 'Firebase izin hatası. Firebase Console\'da Realtime Database kurallarını kontrol edin.';
+      } else {
+        errorMessage = 'Hata: ${e.toString()}';
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Hata: ${e.toString()}'),
+          content: Text(errorMessage),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          duration: const Duration(seconds: 6),
         ),
       );
     } finally {
@@ -187,6 +205,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
     setState(() => _isLoading = true);
     
     try {
+      await GameRepository.ensureAnonymousSignIn();
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         throw Exception('Kullanıcı girişi yapılmamış');
