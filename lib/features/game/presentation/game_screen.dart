@@ -3,21 +3,15 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flame/game.dart';
-import 'package:whats_your_mood/core/constants/app_colors.dart';
 import '../provider/game_provider.dart';
 import '../models/game_state.dart';
-import '../models/player_status.dart';
 import 'widgets/drawer_menu.dart';
 import 'package:whats_your_mood/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../flame/card_table_game.dart';
-import 'widgets/other_players_bar.dart';
-import 'widgets/my_player_area.dart';
 import 'widgets/game_appbar_title.dart';
-import 'widgets/game_board_container.dart';
-import 'widgets/host_reveal_button.dart';
 import 'widgets/game_finished_dialog.dart';
+import 'widgets/game_body.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key, required this.gameId});
@@ -165,128 +159,61 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Widget build(BuildContext context) {
     final asyncGame = ref.watch(gameStreamProvider(widget.gameId));
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     _initializeListener();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      extendBodyBehindAppBar: false,
+      backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(gradient: AppColors.mainGradient),
-        ),
-        title: asyncGame.when(
-          data: (game) => GameAppBarTitle(
-            roundText: '${l10n.round} ${game.currentRound}/${game.totalRounds}',
-            showTimer:
-                game.status == 'playing' &&
-                !game.isRevealed &&
-                game.currentPlayerTurnId != null &&
-                _remainingSeconds > 0,
-            remainingSeconds: _remainingSeconds,
+        centerTitle: false,
+        backgroundColor: theme.colorScheme.surface,
+        surfaceTintColor: theme.colorScheme.surface,
+        titleSpacing: 0,
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: asyncGame.when(
+            data: (game) => GameAppBarTitle(
+              roundText:
+                  '${l10n.round} ${game.currentRound}/${game.totalRounds}',
+              showTimer:
+                  game.status == 'playing' &&
+                  !game.isRevealed &&
+                  game.currentPlayerTurnId != null &&
+                  _remainingSeconds > 0,
+              remainingSeconds: _remainingSeconds,
+            ),
+            loading: () => const Text('Yükleniyor…'),
+            error: (_, __) => const Text('Hata'),
           ),
-          loading: () => const Text(
-            'Yükleniyor...',
-            style: TextStyle(color: Colors.white),
-          ),
-          error: (_, __) =>
-              const Text('Hata', style: TextStyle(color: Colors.white)),
         ),
-        backgroundColor: Colors.transparent,
-        foregroundColor: AppColors.white,
       ),
       drawer: const DrawerMenu(),
-      body: asyncGame.when(
-        data: (gameState) {
-          _updateGameState(gameState);
+      body: SafeArea(
+        child: asyncGame.when(
+          data: (gameState) {
+            _updateGameState(gameState);
 
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              _startTimer(gameState.turnEndTime);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _startTimer(gameState.turnEndTime);
+              }
+            });
+
+            if (gameState.currentMoodCard == null) {
+              return const _InlineLoader();
             }
-          });
 
-          if (gameState.currentMoodCard == null) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (gameState.currentPhotoCards.isEmpty && !gameState.isRevealed) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.inbox, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Kartlar yükleniyor...',
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return _buildTableLayout(gameState, context);
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(
-                'Hata: $e',
-                style: const TextStyle(fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  ref.invalidate(gameStreamProvider(widget.gameId));
-                },
-                child: const Text('Yeniden Dene'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTableLayout(GameState gameState, BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    final otherPlayers = gameState.players
-        .where((p) => p.userId != userId)
-        .toList();
-    final me = gameState.players.firstWhere(
-      (p) => p.userId == userId,
-      orElse: () => const PlayerStatus(
-        userId: 'me',
-        username: 'Ben',
-        hasPlayed: false,
-        isHost: false,
-      ),
-    );
-
-    return Column(
-      children: [
-        if (otherPlayers.isNotEmpty)
-          OtherPlayersBar(
-            players: otherPlayers,
-            currentTurnUserId: gameState.currentPlayerTurnId,
-            remainingSeconds: _remainingSeconds,
-          ),
-        Expanded(
-          child: GameBoardContainer(
-            child: GameWidget<CardTableGame>(game: _game),
-            bottomOverlay: HostRevealButton(
-              isHost:
-                  FirebaseAuth.instance.currentUser?.uid == gameState.hostId,
-              isRevealed: gameState.isRevealed,
-              isLastRound: gameState.currentRound >= gameState.totalRounds,
+            return GameBody(
+              gameState: gameState,
+              game: _game,
+              remainingSeconds: _remainingSeconds,
+              onPlayCard: _playCard,
+              onSelectCard: (cardId) {
+                setState(() => selectedPhotoId = cardId);
+              },
+              selectedPhotoId: selectedPhotoId,
               onNextRound: () async {
                 setState(() => selectedPhotoId = null);
                 try {
@@ -299,10 +226,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       SnackBar(
                         content: Text('Tur başlatılırken hata: $e'),
                         backgroundColor: Colors.red,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
                       ),
                     );
                   }
@@ -319,46 +242,52 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   },
                 );
               },
-            ),
+            );
+          },
+          loading: () => const _InlineLoader(),
+          error: (e, stack) => _InlineError(
+            message: 'Hata: $e',
+            onRetry: () => ref.invalidate(gameStreamProvider(widget.gameId)),
           ),
         ),
-        SafeArea(
-          top: false,
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.white, Colors.grey.shade50],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 15,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
-            child: _buildMyPlayerArea(me, gameState),
+      ),
+    );
+  }
+}
+
+class _InlineLoader extends StatelessWidget {
+  const _InlineLoader();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(child: CircularProgressIndicator());
+  }
+}
+
+class _InlineError extends StatelessWidget {
+  const _InlineError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.error_outline, size: 56, color: theme.colorScheme.error),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: theme.textTheme.bodyLarge,
+            textAlign: TextAlign.center,
           ),
-        ),
-      ],
+          const SizedBox(height: 16),
+          FilledButton(onPressed: onRetry, child: const Text('Yeniden dene')),
+        ],
+      ),
     );
   }
-
-  Widget _buildMyPlayerArea(PlayerStatus me, GameState gameState) {
-    return MyPlayerArea(
-      me: me,
-      gameState: gameState,
-      selectedPhotoId: selectedPhotoId,
-      remainingSeconds: _remainingSeconds,
-      onSelect: (cardId) => setState(() => selectedPhotoId = cardId),
-      onPlay: (cardId) => _playCard(cardId, gameState.currentRound),
-    );
-  }
-
-  // dialog ve host butonu ayrı widget dosyalarına taşındı
 }

@@ -1,14 +1,30 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../game/data/game_repository.dart';
 import '../models/game_state.dart';
 import '../data/mock_card_data.dart';
 import '../models/photo_card.dart';
 import '../models/player_status.dart';
+import '../../../firebase_options.dart';
 
 final gameRepositoryProvider = Provider<GameRepository>((ref) {
-  return GameRepository(FirebaseDatabase.instance);
+  final firebaseApp = Firebase.app();
+  final databaseUrl = DefaultFirebaseOptions.currentPlatform.databaseURL;
+  final database = FirebaseDatabase.instanceFor(
+    app: firebaseApp,
+    databaseURL: databaseUrl,
+  );
+  if (databaseUrl == null || databaseUrl.isEmpty) {
+    debugPrint(
+      '[GameRepositoryProvider] Uyarı: FirebaseOptions.databaseURL tanımlı değil. Firebase Console\'dan gerçek Realtime Database URL\'ini kontrol edin.',
+    );
+  } else {
+    debugPrint('[GameRepositoryProvider] Realtime Database URL: $databaseUrl');
+  }
+  return GameRepository(database);
 });
 
 final gameStreamProvider = StreamProvider.family<GameState, String>((

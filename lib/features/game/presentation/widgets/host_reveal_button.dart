@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:whats_your_mood/core/constants/app_colors.dart';
 
 class HostRevealButton extends StatelessWidget {
   const HostRevealButton({
@@ -21,6 +20,7 @@ class HostRevealButton extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!isHost || !isRevealed) return const SizedBox.shrink();
 
+    final theme = Theme.of(context);
     final String label = isLastRound ? 'Bitir' : 'Sonraki Tur';
     final IconData icon =
         isLastRound ? Icons.flag_outlined : Icons.play_arrow_rounded;
@@ -29,22 +29,24 @@ class HostRevealButton extends StatelessWidget {
       duration: const Duration(milliseconds: 250),
       switchInCurve: Curves.easeOut,
       switchOutCurve: Curves.easeIn,
-      child: FilledButton.tonalIcon(
+      child: FilledButton.icon(
         key: ValueKey<bool>(isLastRound),
         onPressed: isLastRound ? onFinish : onNextRound,
         icon: Icon(icon, size: 22),
         label: Text(
           label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onPrimary,
+          ),
         ),
         style: FilledButton.styleFrom(
-          elevation: 6,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          backgroundColor: Colors.white.withValues(alpha: 0.9),
-          foregroundColor: AppColors.gradientStart,
-          shadowColor: AppColors.gradientStart.withValues(alpha: 0.2),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
       ),

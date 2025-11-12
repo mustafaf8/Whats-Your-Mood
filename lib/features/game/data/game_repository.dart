@@ -23,60 +23,83 @@ class GameRepository {
     required String lobbyName,
     String? password,
   }) async {
-    final newGameRef = _gamesRef().push();
-    final gameId = newGameRef.key!;
+    try {
+      print('[GameRepository] createGame başlatıldı: $lobbyName');
+      final newGameRef = _gamesRef().push();
+      final gameId = newGameRef.key!;
+      print('[GameRepository] Game ID oluşturuldu: $gameId');
 
-    // Deste oluşturmaları
-    final random = Random();
-    final moodDeck = List<String>.from(allMockMoodCards.map((m) => m.id))
-      ..shuffle(random);
-    final photoDeck = List<String>.from(allMockPhotoCards.map((p) => p.id))
-      ..shuffle(random);
+      // Deste oluşturmaları
+      final random = Random();
+      final moodDeck = List<String>.from(allMockMoodCards.map((m) => m.id))
+        ..shuffle(random);
+      final photoDeck = List<String>.from(allMockPhotoCards.map((p) => p.id))
+        ..shuffle(random);
 
-    // Host eline 5 foto kartı ver
-    final hostHandIds = photoDeck.take(5).toList();
-    final hostHand = {for (final id in hostHandIds) id: true};
+      // Host eline 5 foto kartı ver
+      final hostHandIds = photoDeck.take(5).toList();
+      final hostHand = {for (final id in hostHandIds) id: true};
 
-    // İlk tur mood kartı
-    final firstMoodId = moodDeck.first;
+      // İlk tur mood kartı
+      final firstMoodId = moodDeck.first;
 
-    final initial = {
-      'hostId': hostUserId,
-      'status': 'waiting',
-      'totalRounds': 10,
-      'currentRound': 1,
-      'currentMoodCardId': firstMoodId,
-      'lobbyName': lobbyName,
-      if (password != null) 'password': password,
-      'players': {
-        hostUserId: {'username': username, 'score': 0, 'hand': hostHand},
-      },
-      'rounds': {
-        '1': {
-          'moodCardId': firstMoodId,
-          'playedCards': {},
-          'state': 'playing',
+      final initial = {
+        'hostId': hostUserId,
+        'status': 'waiting',
+        'totalRounds': 10,
+        'currentRound': 1,
+        'currentMoodCardId': firstMoodId,
+        'lobbyName': lobbyName,
+        if (password != null) 'password': password,
+        'players': {
+          hostUserId: {'username': username, 'score': 0, 'hand': hostHand},
         },
-      },
-      'deck': {'moodCards': moodDeck, 'photoCards': photoDeck.skip(5).toList()},
-    };
+        'rounds': {
+          '1': {
+            'moodCardId': firstMoodId,
+            'playedCards': {},
+            'state': 'playing',
+          },
+        },
+        'deck': {'moodCards': moodDeck, 'photoCards': photoDeck.skip(5).toList()},
+      };
 
-    await newGameRef.set(initial);
+      print('[GameRepository] Firebase\'e yazılıyor: games/$gameId');
+      try {
+        await newGameRef.set(initial).timeout(
+          const Duration(seconds: 10),
+        );
+        print('[GameRepository] games/$gameId yazıldı');
+      } on TimeoutException {
+        print('[GameRepository] games/$gameId yazma ZAMAN AŞIMI (10 saniye)');
+        throw Exception('Firebase yazma işlemi zaman aşımına uğradı. Firebase kurallarını kontrol edin.');
+      } catch (e) {
+        print('[GameRepository] games/$gameId yazma HATASI: $e');
+        rethrow;
+      }
 
-    // activeLobbies e ekle (createdAt zaman damgası ile)
-    await _activeLobbiesRef().child(gameId).set({
-      'lobbyName': lobbyName,
-      'hostUsername': username,
-      'playerCount': 1,
-      'maxPlayers': 6,
-      'hasPassword': password != null,
-      'createdAt': ServerValue.timestamp,
-    });
+      // activeLobbies e ekle (createdAt zaman damgası ile)
+      print('[GameRepository] Firebase\'e yazılıyor: activeLobbies/$gameId');
+      await _activeLobbiesRef().child(gameId).set({
+        'lobbyName': lobbyName,
+        'hostUsername': username,
+        'playerCount': 1,
+        'maxPlayers': 6,
+        'hasPassword': password != null,
+        'createdAt': ServerValue.timestamp,
+      });
+      print('[GameRepository] activeLobbies/$gameId yazıldı');
 
-    // Ev sahibi için onDisconnect hook'ları kur (isHost: true)
-    _setupOnDisconnectHooks(gameId, hostUserId, isHost: true);
+      // Ev sahibi için onDisconnect hook'ları kur (isHost: true)
+      _setupOnDisconnectHooks(gameId, hostUserId, isHost: true);
 
-    return gameId;
+      print('[GameRepository] createGame tamamlandı: $gameId');
+      return gameId;
+    } catch (e, stackTrace) {
+      print('[GameRepository] createGame HATA: $e');
+      print('[GameRepository] StackTrace: $stackTrace');
+      rethrow;
+    }
   }
 
   Future<void> joinGame({
@@ -437,7 +460,17 @@ class GameRepository {
   static Future<void> ensureAnonymousSignIn() async {
     final auth = FirebaseAuth.instance;
     if (auth.currentUser == null) {
-      await auth.signInAnonymously();
+      print('[GameRepository] Anonim giriş yapılıyor...');
+      try {
+        final userCredential = await auth.signInAnonymously();
+        print('[GameRepository] Anonim giriş başarılı: ${userCredential.user?.uid}');
+      } catch (e, stackTrace) {
+        print('[GameRepository] Anonim giriş HATA: $e');
+        print('[GameRepository] StackTrace: $stackTrace');
+        rethrow;
+      }
+    } else {
+      print('[GameRepository] Kullanıcı zaten giriş yapmış: ${auth.currentUser?.uid}');
     }
   }
 }
